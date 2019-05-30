@@ -663,12 +663,8 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
   {
     names(wide_data)[i+1]=code_vector[i]
   }#end for
-  
-
-
 
 ```
-
 
 
 
@@ -687,31 +683,32 @@ crs(med_rast1) <- "+proj=utm +zone=36"
 med_rast1= projectRaster(med_rast1, crs = "+proj=longlat")
 
 
-#import data frame with shore loctions
+#import data frame with shore locations
 location_data <- read.csv("data/locations_lat_on_shore.csv")
-colnames(location_data)=c("site","lat_shore","lon_shore","perpendicular")
+colnames(location_data)=c("Site","Lat_shore","Lon_shore","Perpendicular")
 
-#merge the data
-loc_data=merge(wide_data,location_data,by.x="site",by.y="site")
+#merge the data and order the columns
+loc_data=merge(wide_data,location_data)
+loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,Adom:Vest)
 
-#subset to unique nets using the 'net_index' column
-data_unique_net=proccessed_data[!duplicated(proccessed_data$net_index),]
+
 #phatom to meters
-data_unique_net$depth_meter=1.8*data_unique_net$Depth
+loc_data$Depth_m=1.8*loc_data$Depth
 #nautical miles to Km
-data_unique_net$distance_from_shore_m=1.8*data_unique_net$Distance_to_Shore
+loc_data$Distance_to_Shore = as.numeric(loc_data$Distance_to_Shore)
+loc_data$Distance_from_shore_km=1.8*loc_data$Distance_to_Shore
 
 #next we will work with net which location with lat and lon (the lat and lon are on the shore in front of the fishing location)
 #first we will create 3 new column for indexing the type of data for each net
 #for nets with depth
-data_unique_net$depth_specifyed=rep(NA,nrow(data_unique_net))
-data_unique_net[!is.na(data_unique_net$depth_meter),"depth_specifyed"]=T
+loc_data$depth_specifyed=rep(NA,nrow(loc_data))
+loc_data[!is.na(loc_data$depth_meter),"depth_specifyed"]=T
 #for nets with distance
-data_unique_net$distance_specifyed=rep(NA,nrow(data_unique_net))
-data_unique_net[!is.na(data_unique_net$distance_from_shore_m),"distance_specifyed"]=T
+loc_data$distance_specifyed=rep(NA,nrow(loc_data))
+loc_data[!is.na(loc_data$distance_from_shore_m),"distance_specifyed"]=T
 #for nets with starting position
-data_unique_net$location_specifyed=rep(NA,nrow(data_unique_net))
-data_unique_net[!is.na(data_unique_net$new_site),"location_specifyed"]=T
+loc_data$location_specifyed=rep(NA,nrow(loc_data))
+loc_data[!is.na(loc_data$new_site),"location_specifyed"]=T
 
 #For net with location and depth we can use new location by crossing the latitude and the depth
 #building a function for calculating the depth in pront of each location
@@ -743,19 +740,19 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
 }
 detach("package:tidyr", unload=TRUE)
 #applying the function
-data_unique_net$Lon_final=rep(NA,nrow(data_unique_net))
-data_unique_net$Lat_final=rep(NA,nrow(data_unique_net))
-data_unique_net$depth_diff=rep(NA,nrow(data_unique_net))
-#nrow(data_unique_net)
-nrow(data_unique_net)
-for (r in 1:nrow(data_unique_net)){
+loc_data$Lon_final=rep(NA,nrow(loc_data))
+loc_data$Lat_final=rep(NA,nrow(loc_data))
+loc_data$depth_diff=rep(NA,nrow(loc_data))
+#nrow(loc_data)
+nrow(loc_data)
+for (r in 1:nrow(loc_data)){
   print(r)
-  row_c=data_unique_net[r,]
+  row_c=loc_data[r,]
   if (!is.na(row_c$lat_shore) & !is.na(row_c$depth_meter)){
-    final_loc=location_depth_based(data_unique_net[r,"lon_shore"],data_unique_net[r,"lat_shore"],data_unique_net[r,"perpendicular"],data_unique_net[r,"depth_meter"])
-    data_unique_net[r,"Lon_final"]=final_loc[1,"lon_final"]
-    data_unique_net[r,"Lat_final"]=final_loc[1,"lat_final"]
-    data_unique_net[r,"depth_diff"]=final_loc[1,"depth_diff"]
+    final_loc=location_depth_based(loc_data[r,"lon_shore"],loc_data[r,"lat_shore"],loc_data[r,"perpendicular"],loc_data[r,"depth_meter"])
+    loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
+    loc_data[r,"Lat_final"]=final_loc[1,"lat_final"]
+    loc_data[r,"depth_diff"]=final_loc[1,"depth_diff"]
   }else{}
 }
 
@@ -771,24 +768,24 @@ location_distance_based=function(Lon,Lat,Perpendicular,distance){
   location=data.frame(lon_final=position[1,"lon"],lat_final=position[1,"lat"])
   return(location)}
 #run on data
-for (r in 1:nrow(data_unique_net)){
+for (r in 1:nrow(loc_data)){
   print(r)
-  row_c=data_unique_net[r,]
+  row_c=loc_data[r,]
   if (!is.na(row_c$lat_shore) & is.na(row_c$depth_meter) & !is.na(row_c$distance_from_shore_m)){
-    final_loc=location_distance_based(data_unique_net[r,"lon_shore"],data_unique_net[r,"lat_shore"],data_unique_net[r,"perpendicular"],data_unique_net[r,"distance_from_shore_m"])
-    data_unique_net[r,"Lon_final"]=final_loc[1,"lon_final"]
-    data_unique_net[r,"Lat_final"]=final_loc[1,"lat_final"]
+    final_loc=location_distance_based(loc_data[r,"lon_shore"],loc_data[r,"lat_shore"],loc_data[r,"perpendicular"],loc_data[r,"distance_from_shore_m"])
+    loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
+    loc_data[r,"Lat_final"]=final_loc[1,"lat_final"]
   }else{}
 }
 
 #Insert depth based on the location
-data_unique_net$loc_DEPTH=extract(med_rast1, data_unique_net[,c("Lon_final","Lat_final")])
-data_unique_net$loc_DEPTH=abs(data_unique_net$loc_DEPTH)
+loc_data$loc_DEPTH=extract(med_rast1, loc_data[,c("Lon_final","Lat_final")])
+loc_data$loc_DEPTH=abs(loc_data$loc_DEPTH)
 ##Test if location based depth are good
 #summary
-summary(data_unique_net$loc_DEPTH)
+summary(loc_data$loc_DEPTH)
 #compare to nets with specified depth
-depth_specified=subset(data_unique_net,depth_specifyed==T)
+depth_specified=subset(loc_data,depth_specifyed==T)
 depth_specified$depth_diff=depth_specified$loc_DEPTH-depth_specified$depth_meter
 depth_check=data.frame(observed_depth=depth_specified$depth_meter,location_depth=depth_specified$loc_DEPTH,depth_diff=depth_specified$depth_meter-depth_specified$loc_DEPTH)
 summary(depth_check$depth_diff)
