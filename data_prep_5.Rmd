@@ -1,0 +1,967 @@
+---
+title: "data preperation"
+output: html_document
+author: Itay Vjn Rayn
+editor: Dvora Low Ramati
+---
+
+
+
+```{r}
+library(tidyverse)
+library("raster")
+
+```
+
+
+
+
+
+
+!!!run every time from every computer!!!
+
+
+#---define passes to any computer ---- 
+required if dont working from project.
+make a variable called "thesis_directory" with my location of the documents.
+this is a good solution if you work on google drive in different computers
+```{r}
+
+
+
+#call the sistem enviromental variable of the directory of this computer
+HOME <- Sys.getenv("HOME")
+#get out the passes to "Documents"
+split_home=unlist(strsplit(HOME,"/"))
+my_home=paste(split_home[1:3],collapse = "/")
+#passes to the folder "data" in my thesis folder
+thesis_directory=paste(my_home,"Google Drive/second degree/thesis/data",sep ="/")
+
+```
+
+
+
+functions to convert the data from raw data to data
+
+
+  1. swap.plus: 
+    different sizes in the raw data are writen it that form: 2 M+1 L+ which mean: 2 boxes size Medium and 1 box size Large.
+    replace + to _
+    
+   2. different_sizes: split words with "_" between them.
+      that split 1 catch with 2 different sizes, convert them to 2 strings.
+      
+  ?  3. split_let_from_num: 
+        split character with space. from "0.5 B" to "0.5" "B". 
+        work in the loop, because need to activate on character, on single cell, can't use with whole list
+        "term" is the name of 1 cell in the list in the loop in function 4
+    
+      4. proccesing:
+        take the data, convert cell to character, call to the 1&2 functions,
+        call function 3, and seperate the cells to columns of "Kg", and sizes [box_b, box_s...ind_b, ind_s...].
+        The column "Ind kg" is the number of kg, when the number of fishes is in "Ind_no_size"
+        Example: "2 Ind 5 Kg" will be data$ind_no_size=2, and data$ind_Kg=5
+        
+
+```{r}
+#1.
+  swap.plus<-function(cell){
+  return(gsub("\\+", "_", cell))
+}
+
+#2.
+  differrnt_sizes<-function(cell){
+  return(strsplit(cell,"_"))
+}
+
+#3.
+  split_let_from_num<-function(term){
+  return(strsplit(term," "))
+}
+
+  
+#4.
+  processing<-function(cell,species_template){
+  cell<-as.character(cell)
+  cell<-swap.plus(cell)
+  cell<-differrnt_sizes(cell)
+
+
+  for(i in 1:length(cell[[1]])){
+    term<-cell[[1]][i]
+    term<-split_let_from_num(term)
+    num<-as.numeric(term[[1]][1])
+
+  #if length==1, it just number of boxes     
+    if(length(term[[1]])==1){
+      species_template$box_no_size<-num
+    }#end if
+    
+  #if length==2, it's could be number+kg, number+size or number+individuals(Ind)
+    if(length(term[[1]])==2){
+      sizeA<-term[[1]][2]
+      if(sizeA=="Ind"){
+        species_template$ind_no_size<-num
+      }#end if(sizeA) 
+      else{
+        if(sizeA=="Kg"){
+          species_template$kg_no_size<-num
+        }#end if(sizeA)
+        else{
+          if(sizeA=="B"){
+            species_template$box_b<-num 
+          }#end if(sizeA)
+          if(sizeA=="S"){
+            species_template$box_s<-num 
+          }#end if sizeA
+          if(sizeA=="M"){
+            species_template$box_m<-num 
+          }#end if(sizeA)
+          if(sizeA=="L"){
+            species_template$box_l<-num 
+          }#end if(sizeA)
+        }#end else
+      }#end esle
+    }#end if(lenghe...)
+    
+    
+   #if length==3, it could be number+kg+size or number+individuals+size, number+size+another number
+    #[1 box with size and one without]
+    if(length(term[[1]])==3){
+      sizeA<-term[[1]][2]
+      sizeB<-term[[1]][3]
+      if(sizeA=="Ind"){
+        if(sizeB=="B"){
+          species_template$ind_b<-num 
+        }#end if(sizeB)
+        if(sizeB=="S"){
+          species_template$ind_s<-num 
+        }#end if(sizeB)
+        if(sizeB=="M"){
+          species_template$ind_m<-num 
+        }#end if(sizeB)
+        if(sizeB=="L"){
+          species_template$ind_l<-num 
+        }#end if(sizeB)
+      }#end if(sizeA)
+      else{
+        if(sizeA=="Kg"){
+          if(sizeB=="B"){
+            species_template$kg_b<-num 
+          }#end if(sizeB)
+          if(sizeB=="S"){
+            species_template$kg_s<-num 
+          }#end if(sizeB)
+          if(sizeB=="M"){
+            species_template$kg_m<-num 
+          }#end if(sizeB)
+          if(sizeB=="L"){
+            species_template$kg_l<-num 
+          }#end if(sizeB)
+        }#end if(sizeA)
+      
+         if(sizeA=="B"){
+            species_template$box_b<-num
+            species_template$box_no_size = sizeB
+          }#end if(sizeA)
+          if(sizeA=="S"){
+            species_template$box_s<-num 
+            species_template$box_no_size = sizeB
+          }#end if sizeA
+          if(sizeA=="M"){
+            species_template$box_m<-num
+            species_template$box_no_size = sizeB
+          }#end if(sizeA)
+          if(sizeA=="L"){
+            species_template$box_l<-num
+            species_template$box_no_size = sizeB
+            }#end if sezeA
+        
+      }#end else
+    }#end if(length...)
+     
+    
+  #if length==4, it could be number+ind+number+kg or num+size+num+another size [2 different sizes in boxes]
+    if(length(term[[1]])==4){
+      sizeA = term[[1]][2]
+      sizeB = term[[1]][4]
+      num2 <-as.numeric(term[[1]][3])
+      
+       if(sizeA=="Ind"){
+          species_template$ind_no_size<-num
+          species_template$ind_kg=num2
+      }#end if(sizeA)
+      
+      else{
+       
+        if(sizeA=="B"){
+            species_template$box_b<-num 
+          }#end if(sizeA)
+          if(sizeA=="S"){
+            species_template$box_s<-num 
+          }#end if sizeA
+          if(sizeA=="M"){
+            species_template$box_m<-num 
+          }#end if(sizeA)
+          if(sizeA=="L"){
+            species_template$box_l<-num 
+          }#end if(sizeA) 
+        
+        
+         if(sizeB=="B"){
+            species_template$box_b<-num2 
+          }#end if(sizeB)
+          if(sizeB=="S"){
+            species_template$box_s<-num2 
+          }#end if sizeB
+          if(sizeB=="M"){
+            species_template$box_m<-num2 
+          }#end if(sizeB)
+          if(sizeB=="L"){
+            species_template$box_l<-num2 
+          }#end if(sizeB)
+        
+      }#end else
+    }#end if (length==4)
+    
+  #if length==6 it is 3 sizes of boxes: num+size+num+size+num+size
+    if(length(term[[1]])==6){
+      sizeA = term[[1]][2]
+      sizeB = term[[1]][4]
+      sizeC=term[[1]][6]
+      num2 <-as.numeric(term[[1]][3])
+      num3 = as.numeric(term[[1]][5])
+       
+        if(sizeA=="B"){
+            species_template$box_b<-num 
+          }#end if(sizeA)
+          if(sizeA=="S"){
+            species_template$box_s<-num 
+          }#end if sizeA
+          if(sizeA=="M"){
+            species_template$box_m<-num 
+          }#end if(sizeA)
+          if(sizeA=="L"){
+            species_template$box_l<-num 
+          }#end if(sizeA) 
+        
+      
+         if(sizeB=="B"){
+            species_template$box_b<-num2 
+          }#end if(sizeB)
+          if(sizeB=="S"){
+            species_template$box_s<-num2 
+          }#end if sizeB
+          if(sizeB=="M"){
+            species_template$box_m<-num2 
+          }#end if(sizeB)
+          if(sizeB=="L"){
+            species_template$box_l<-num2 
+          }#end if(sizeB)
+        
+      
+       if(sizeC=="B"){
+            species_template$box_b<-num3 
+          }#end if(sizeC)
+          if(sizeC=="S"){
+            species_template$box_s<-num3 
+          }#end if sizeC
+          if(sizeC=="M"){
+            species_template$box_m<-num3 
+          }#end if(sizeC)
+          if(sizeC=="L"){
+            species_template$box_l<-num3 
+          }#end if(sizeC)
+    
+    }#end if (length==6)    
+    
+  }#end for
+  
+  return(species_template)
+}#end function
+
+
+
+
+```
+
+  
+  Creat empty vectors, requeried for the functions above, will use as columns in the new data
+```{r}
+species<-c(NA)
+box_no_size<-c(NA)
+box_b<-c(NA)
+box_s<-c(NA)
+box_m<-c(NA)
+box_l<-c(NA)
+ind_no_size<-c(NA)
+ind_b<-c(NA)
+ind_s<-c(NA)
+ind_m<-c(NA)
+ind_l<-c(NA)
+ind_kg = c(NA)
+kg_no_size<-c(NA)
+kg_b<-c(NA)
+kg_s<-c(NA)
+kg_m<-c(NA)
+kg_l<-c(NA)
+
+```
+
+uploud the data, and adding draging time column
+```{r}
+#upload the data
+raw_data <- read.csv(file=paste(thesis_directory,"all_data_2013_2018.csv",sep = "/"), stringsAsFactors=FALSE)
+raw_data[raw_data==""]<-NA
+
+   
+#adding draging time to raw data
+  
+  Draging_time<-rep(NA,length(raw_data$Net))
+  for(i in 1:length(raw_data$Net)){
+    end<-as.numeric(raw_data$End_Time_hh[i])+as.numeric(raw_data$End_Time_mm[i])/60
+    start<-as.numeric(raw_data$Start_Time_hh[i])+as.numeric(raw_data$Start_Time_mm[i])/60
+    if(is.na(start)| is.na(end)){
+      
+    }else{
+      if(start>end){
+        Draging_time[i]<-24-start+end
+      }else{
+        Draging_time[i]<-end-start
+      }
+    }
+    
+  }
+raw_data=cbind(raw_data,Draging_time)
+
+
+```
+
+Order the data:
+ Create a net index from the net number, day, month, year - to prevent problems from the defferent raw data files.
+ seperate the name of the site from the direction. Ashdod N become to:
+ data$site="Ashdod", data$direction=N
+
+ save the data
+
+```{r}
+#convert to tibble, and cerate net index from the Net column and the year
+data=as_tibble(raw_data)
+data=mutate(data, Net_index=paste(data$Net, data$Day.XX., data$Month.XX., data$Year.XXXX.,sep = "_"))
+
+#erase empty column - 
+#!!!!-----CUATION - CHECK IF IN iTAY DATA THIS COLUMN IMPORTANT!!!!!!!---
+data =data %>% dplyr::select(everything(),-Fishing_field_text) 
+
+
+#Seperate site and direction:
+#create site vectors
+site=data$Fishing_field
+Direction=rep(NA,length =length(site))
+
+direc_vec=c("N","W","E","S")
+
+#seperate the strings
+site=strsplit(site," ")
+
+  for (i in 1:length(site)) {
+
+    #if the is to direction and one place: Ashdod N E
+    if ((site[[i]][2] %in% direc_vec)&(site[[i]][3] %in% direc_vec)) {
+      Direction[i]=paste(site[[i]][2],site[[i]][3],sep = " ")    
+      site[[i]][2]="_"
+      site[[i]][3]="_"
+      site[i]=paste(site[[i]][1],site[[i]][2],site[[i]][3])
+      site[i]=gsub("\\ _ _","",site[i])
+          
+    }#end if
+  
+    #just one site and one direction: Asdod N
+    if (site[[i]][2] %in% direc_vec) {Direction[i]=site[[i]][2]
+                                   site[[i]][2]="_"
+                                   site[i]=paste(site[[i]][1],site[[i]][2])
+                                   site[i]=gsub("\\ _","",site[i])
+                                   }#end if
+    
+    #site with 2 words and 1 direction: Bat Yam N
+    if (site[[i]][3] %in% direc_vec)  {Direction[i]=site[[i]][3]
+                                    site[[i]][3]="_"
+                                   site[i]=paste(site[[i]][1], site[[i]][2],site[[i]][3])
+                                   site[i]=gsub("\\ _","",site[i])
+                                  }#end if
+  
+   #just site with 1 word
+    if (is.na(site[[i]][2])==FALSE ){
+       site[i]=paste(site[[i]][1],site[[i]][2],sep = " ")
+    }#end if
+  
+}#end for
+
+
+site=as.vector(unlist(site))
+data=cbind(data,site,Direction)
+
+
+write.csv(data,file = paste(thesis_directory,"R/prosseced data/new_data_prosseced_raw.csv",sep = "/"))
+
+data = read.csv(file =paste( thesis_directory,"R/prosseced data/new_data_prosseced_raw.csv",sep = "/"))
+
+
+```
+
+
+
+In the raw data, there is information about number of catch, size, and KG or Box in one cell, and here its seperated.
+This chunk is oredering the data to one line for any single catch, with all the information about the net, and also sepereate columns for catches with size reported, and for Kg catches.
+
+
+```{r}
+
+temp_data<-c()
+
+#create vector contain the species names
+ species_vector =   colnames(dplyr :: select(data,Anshubi:Aras,-(Many.Nasralas),-(Comments),-(Missing),-(Very_weak)))
+
+
+nets<-c(1:length(data[,1]))
+#nets<-c(1:300)
+
+night_drag.place<-which(colnames(data)=="night_drag_prawn")
+
+
+#loop get over any row in the data an call to the "processing" function for sepertate and sort the catch strings
+#[more explanation above, in the function chunk]
+
+#run on any row
+  for(i in nets){
+
+  #create empty data frame with the required columns
+    net_template<-cbind(data[1:night_drag.place][i,],"Many.Nasralas"= data$Many.Nasralas[i], "Very_weak"=data$Very_weak[i], "Missing"= data$Missing[i], "Comments"= data$Comments[i], "Draging_time"=data$Draging_time[i], "Net_index"=data$Net_index[i],"Site"=data$site[i],"Direction"=data$Direction[i], species, box_no_size, box_b, box_s, box_m, box_l, ind_no_size, ind_b, ind_s, ind_m, ind_l, ind_kg, kg_no_size, kg_b, kg_s, kg_m,kg_l) # net data might have more than 1 rows 
+ 
+  net<-c()
+  
+  # run on any species
+  for (j in species_vector){
+    if(is.na(data[i,j])==F){ #species cell NA or not
+      species_template<-net_template
+      species_template$species<-colnames(data[j])# species data might have more than 1 rows
+      
+  #There is data in the format: "1 Ind 2 Kg 1 Ind 5 Kg", in these case, split the data to two rows, the original
+  #row, just with the first fish ("1 Ind 2 Kg"), and another row, with the same net information, but just with
+  #the second fish in the catch part ("1 Ind 5 Kg") [other species received NA]
+      
+      #seperate the cell strings
+      cell_length=data[i,j]
+      cell_length=gsub("\\+ ","",cell_length)
+      cell_length=gsub("\\+"," ",cell_length)
+      cell_length=as.character(cell_length)
+      cell_length=strsplit(cell_length," ")
+    
+      #If it have 8 strings, split to 2 rows:
+      if (length(cell_length[[1]])==8)
+      {
+        cell_length_A=paste(cell_length[[1]][1],cell_length[[1]][2],cell_length[[1]][3],cell_length[[1]][4])
+        cell_length_B=paste(cell_length[[1]][5],cell_length[[1]][6],cell_length[[1]][7],cell_length[[1]][8])
+       split_row=data[i,]
+       split_row[20:81]=NA
+         split_row[j]= cell_length_B
+        data[i,j]=cell_length_A
+        data=rbind(data,split_row)
+      }#end if
+      
+      #call to the process function - order the data to seperate columns
+      species_data<-processing(data[i,j],species_template)
+      net<-rbind(net,species_data)
+     
+    }#end if(is.na)
+  }# end j loop
+  temp<-rbind(temp_data,net)
+  temp_data<-temp
+}#end i loop
+
+
+
+
+```
+
+
+
+
+
+ 
+Convert the data to Kg box is 10 Kg.
+Individuals of Lokus, Musar and Sultan Mix with size, I convert to Kg up to the estimate of Levi, the fisherman
+
+```{r}
+  kg_data=temp_data
+  
+  for (i in 1:length(kg_data$Net)) {
+    
+    if(is.na(kg_data$box_no_size[i])==FALSE)
+    {
+      kg_data$kg_no_size[i]=(kg_data$box_no_size[i]*10)
+      kg_data$box_no_size[i]=NA
+    }#end if
+    
+    if(is.na(kg_data$box_b[i])==FALSE)
+    {
+      kg_data$kg_b[i]=(kg_data$box_b[i]*10)
+      kg_data$box_b[i]=NA
+    }#end if
+    
+     if(is.na(kg_data$box_s[i])==FALSE)
+    {
+      kg_data$kg_s[i]=(kg_data$box_s[i]*10)
+      kg_data$box_s[i]=NA
+    }#end if
+    
+    
+     if(is.na(kg_data$box_m[i])==FALSE)
+    {
+      kg_data$kg_m[i]=(kg_data$box_m[i]*10)
+      kg_data$box_m[i]=NA
+    }#end if
+    
+     if(is.na(kg_data$box_l[i])==FALSE)
+    {
+      kg_data$kg_l[i]=(kg_data$box_l[i]*10)
+      kg_data$box_l[i]=NA
+    }#end if
+    
+    #if there are ind with no size, but with kg, the Kg is number of individuals*individuals kg. 
+    if(is.na(kg_data$ind_no_size[i])==FALSE)
+    { if(is.na(kg_data$ind_kg[i])==FALSE)
+        { 
+        kg_data$kg_no_size[i]=(kg_data$ind_no_size[i]*kg_data$ind_kg[i])
+        kg_data$ind_no_size[i]=NA
+        kg_data$ind_kg[i]=NA
+        }#end if
+      
+    }#end if
+   
+    #there are smal individuals of Lokus
+    if(is.na(kg_data$ind_s[i])==FALSE)
+    {
+      if (kg_data$species[i]=="Lokus")
+      {
+        kg_data$kg_no_size[i]=2
+        kg_data$ind_s[i]=NA
+      }#end if
+    }#end if
+    
+    #there are meduim individuals of Lokus
+    if(is.na(kg_data$ind_m[i])==FALSE)
+    {
+      if (kg_data$species[i]=="Lokus")
+      {
+        kg_data$kg_no_size[i]=5
+        kg_data$ind_m[i]=NA
+      }#end if
+    }#end if
+    
+    #there are large individuals of Lokus, Musar, and Soltan mix
+     if(is.na(kg_data$ind_l[i])==FALSE)
+    {
+      if (kg_data$species[i]=="Lokus")
+      {
+        kg_data$kg_no_size[i]=12.5
+        kg_data$ind_l[i]=NA
+      }#end if
+       
+       if (kg_data$species[i]=="Musar")
+      {
+        kg_data$kg_no_size[i]=10
+        kg_data$ind_l[i]=NA
+      }#end if
+       
+         if (kg_data$species[i]=="Soltan_Mix")
+      {
+        kg_data$kg_no_size[i]=0.2
+        kg_data$ind_l[i]=NA
+      }#end if
+    }#end if
+    
+  }#end for
+
+
+
+```
+
+
+
+ swich to other data - new_data.
+  if we want to save the information about size, it's required to split any row with 2 [or 3] different sizes, and to make it 2 rows.
+
+ replace NA to 0 in the catch [and convert to tibble]
+
+ 
+```{r}
+
+#switch to "new_data" because I will erase the sizes information
+new_data=kg_data
+
+#replace NA to zero, just in the catch part, in very clumsy way =(
+temp_data = new_data %>% dplyr:: select(box_no_size:kg_l)
+temp_data[is.na(temp_data)]=0
+new_data=dplyr:: select(new_data,-(box_no_size:kg_l))
+new_data=cbind(new_data,temp_data)
+new_data=dplyr:: select(new_data,Net,Net_index,everything())
+
+#sum the  kg columns 
+new_data$kg_s=as.numeric(new_data$kg_s)
+new_data= new_data %>% mutate (Kg= kg_b+kg_l+kg_m+kg_no_size+kg_s)
+
+#erase the unnessesary columns  - now the catch is just in "Amount" and "Unit", with mo size
+new_data =new_data %>% dplyr::select(everything(),-(box_no_size:kg_l))
+write.csv(new_data,file = paste(thesis_directory,"R/prosseced data/new_data_one_kg_col.csv",sep = "/"))
+new_data = read.csv(file = paste(thesis_directory,"R/prosseced data/new_data_one_kg_col.csv",sep = "/"))
+
+
+```
+
+function for putting zeros where species is not found - create raws withe zero
+for the species isn't written.
+
+Input:1. Data frame with any species in any net in seperate raw.
+      Contain the columns: "Net_index", "species","Kg"
+      
+      2. Vector with the species names apears in the data$species
+      
+Output: Data frame with the columns:"net_index", "sp", "kg"
+        contain seperate raw for any species in any net - species didn't apear in 
+        a net of the input [species didn't catched in a specific net]
+        is wrriten with amount of 0 and unit of "zero filled"
+
+```{r}
+
+data_add_zero_F=function(in_data,sp_list){
+  zero_data=data.frame()
+  #run the loop for any species
+  for (sp in sp_list){
+    print(sp)
+    net_sp=data.frame()
+    #run the loop for any net
+    for(net in unique(in_data$Net_index)){
+      #print(net)
+      #for(net in c("1_21_9_2009")){
+      net_data=in_data[in_data$Net_index==net,]
+      #if the species is in the net, copy it's information
+      if (sp %in% net_data$species){
+        sp_in_net=subset(net_data,net_data$species==sp)
+        net_c=data.frame(net_index=as.character(sp_in_net$Net_index),sp=as.character(sp_in_net$species),kg=as.numeric(sp_in_net$Kg))
+#Itay has also size column. I hasn't, at least for now. 
+        #,size=as.character(sp_in_net$size)        
+#print(net_c)
+        #if the species doesn't exist in the net put it as 0
+      }else{
+        net_c=data.frame(net_index=net,sp=sp,kg=0) 
+        #,size=NA
+      }
+      net_sp=rbind(net_sp,net_c)
+    }
+    zero_data=rbind(zero_data,net_sp)
+  }
+  return(zero_data)
+}
+
+```
+
+call to the data_add_zero function, save and edit
+
+```{r}
+zero_data=data_add_zero_F(new_data,species_vector)
+
+write.csv(zero_data,file = paste(thesis_directory,"R/prosseced data/temporary_zero_data.csv",sep = "/"))
+zero_data=read.csv(paste(thesis_directory,"R/prosseced data/temporary_zero_data.csv",sep = "/"))
+zero_data=zero_data[,-1]
+
+```
+
+
+Convert the data to wide format - 
+
+!!!------ It arese the duplicate of the Lokus and Musar I created before. need to sum them instead -----!!!!!
+
+```{r}
+zero_data$net_index=as.factor(zero_data$net_index)
+zero_data$sp=as.character(zero_data$sp)
+wide_data <- reshape(zero_data,timevar = "sp",idvar = c("net_index"),direction = "wide")
+
+```
+
+
+names of species - from common name to code
+first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to comper
+```{r}
+#uploud Itay sceintific names [old data]
+sceintific_names=read.csv(paste(thesis_directory,"species_scientific_name.csv",sep = "/"))
+#create and join empty row, to make the datas equal
+emepty_row=rep(NA,13)
+sceintific_names = rbind(sceintific_names, emepty_row)
+sceintific_names = dplyr::select(sceintific_names, Sp_code, Common_name, Sceintific_name=scintific_name)
+#sort by A-Z of the common name
+sceintific_names = sceintific_names[order(sceintific_names$Common_name),]
+#sort the vector from new data and join
+species_vector_sort=species_vector[order(species_vector)]
+
+
+
+#arase from the data empty columns.
+#The Jelly fish had just 5 records, so I chose to arease it [I think most of the time they not reported]
+wide_data=wide_data %>% dplyr::select(everything(),-kg.Jelly_Fish, -kg.barbon_vadim,  -kg.Gerbid_new, -kg.Vest)
+#cerate name vector
+names_vector =   colnames(dplyr :: select(wide_data,kg.Anshubi:kg.Aras))
+  
+  #remove the Kg form the names
+  for (i in 1:length(names_vector)) {
+  names_vector[i] = gsub("kg.", "", names_vector[i] )  
+  }
+   write.csv(names_vector,file = paste(thesis_directory,"R/prosseced data/names_vector.csv",sep = "/"))
+   
+   
+ #uploud an uplate of the scintific name - data with common names, origin, code, and scientific names - I joined to Itay names sum new species with new code
+code_sceintific_names= read.csv(file=paste(thesis_directory,"species_scientific_name_new_data.csv",sep = "/"), stringsAsFactors=FALSE)
+
+#order the names in the vector from the data=names vector, and in the sceintific names data
+  code_sceintific_names=code_sceintific_names[order(code_sceintific_names$Common_name),]
+  names_vector=names_vector[order(names_vector)]
+
+  #join the vectors to ensute they equal
+code_sceintific_names=cbind(code_sceintific_names,names_vector)
+
+#replace the "kg" in the colnames of the species
+  library(stringr)
+     wide_data = wide_data %>% rename_at(vars(starts_with("kg.")), funs(str_replace(., "kg.", "")))
+ 
+ #order the data
+  wide_data=wide_data[,order(colnames(wide_data))]
+  wide_data= wide_data %>% dplyr::select(net_index,everything())
+
+  #replace the colnames from common names to codes in cumsy way...
+  code_vector=code_sceintific_names$Sp_code
+  for (i in 1:length(names_vector))
+  {
+    names(wide_data)[i+1]=code_vector[i]
+  }#end for
+  
+
+
+
+```
+
+
+
+
+
+
+```{r}
+#import the raster file, subset and manage projection
+
+#I run thes rows in regular R script, not here in Rmarkdown. has to be OK in git!
+setwd("C:/Users/Admin/Google Drive/second degree/thesis/data")
+med_rast1=raster("map_med.txt")
+
+
+med_rast1[med_rast1<(-300)]<-NA
+med_rast1[med_rast1>0]<-NA
+crs(med_rast1) <- "+proj=utm +zone=36"
+med_rast1= projectRaster(med_rast1, crs = "+proj=longlat")
+
+
+#import data frame with shore loctions
+location_data <- read.csv(paste(thesis_directory,"locations_lat_on_shore.csv",sep = "/"))
+colnames(location_data)=c("site","lat_shore","lon_shore","perpendicular")
+
+#merge the data
+proccessed_data=merge(proccessed_data,location_data,by.x="new_site",by.y="site")
+
+#subset to unique nets using the 'net_index' column
+data_unique_net=proccessed_data[!duplicated(proccessed_data$net_index),]
+#phatom to meters
+data_unique_net$depth_meter=1.8*data_unique_net$Depth
+#nautical miles to Km
+data_unique_net$distance_from_shore_m=1.8*data_unique_net$Distance_to_Shore
+
+#next we will work with net which location with lat and lon (the lat and lon are on the shore in front of the fishing location)
+#first we will create 3 new column for indexing the type of data for each net
+#for nets with depth
+data_unique_net$depth_specifyed=rep(NA,nrow(data_unique_net))
+data_unique_net[!is.na(data_unique_net$depth_meter),"depth_specifyed"]=T
+#for nets with distance
+data_unique_net$distance_specifyed=rep(NA,nrow(data_unique_net))
+data_unique_net[!is.na(data_unique_net$distance_from_shore_m),"distance_specifyed"]=T
+#for nets with starting position
+data_unique_net$location_specifyed=rep(NA,nrow(data_unique_net))
+data_unique_net[!is.na(data_unique_net$new_site),"location_specifyed"]=T
+
+#For net with location and depth we can use new location by crossing the latitude and the depth
+#building a function for calculating the depth in pront of each location
+location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
+  #first is a vector of distances from the starting location to choose from
+  distances=seq(0,28000,100)
+  loc_dt=data.frame()#list of data frames for each location. each data frame with 3 columns: lat,lon,depth
+  start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
+  #next is the depwth in each of the distances
+  for (d in distances){
+    loc=data.frame(destPoint(start_position,Perpendicular,d))
+    loc_c=SpatialPoints(loc, proj4string=CRS("+proj=longlat"))
+    loc_UTM=spTransform(loc_c,CRS("+proj=utm +zone=36"))#transform fom degrees to UTM
+    loc_DEPTH=extract(med_rast1, loc_c)#this will give the depths of the individuals
+    loc$depth=loc_DEPTH
+    loc_dt=rbind(loc_dt,loc)#adding to the data frmae of all points in the location
+  }
+  if (nrow(loc_dt[complete.cases(loc_dt),])==0){
+    location=data.frame(lon_final=NA,lat_final=NA,depth_diff=NA)}else{
+      target_location=which(abs(loc_dt$depth-(-1*target_depth))==min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+      print(min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+      if (min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T)>10){
+        location=data.frame(lon_final=NA,lat_final=NA,depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+      }else{
+        target_location=some(target_location,1)
+        location=data.frame(lon_final=loc_dt[target_location,"lon"],lat_final=loc_dt[target_location,"lat"],depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))}
+    }
+  return(location)
+}
+detach("package:tidyr", unload=TRUE)
+#applying the function
+data_unique_net$Lon_final=rep(NA,nrow(data_unique_net))
+data_unique_net$Lat_final=rep(NA,nrow(data_unique_net))
+data_unique_net$depth_diff=rep(NA,nrow(data_unique_net))
+#nrow(data_unique_net)
+nrow(data_unique_net)
+for (r in 1:nrow(data_unique_net)){
+  print(r)
+  row_c=data_unique_net[r,]
+  if (!is.na(row_c$lat_shore) & !is.na(row_c$depth_meter)){
+    final_loc=location_depth_based(data_unique_net[r,"lon_shore"],data_unique_net[r,"lat_shore"],data_unique_net[r,"perpendicular"],data_unique_net[r,"depth_meter"])
+    data_unique_net[r,"Lon_final"]=final_loc[1,"lon_final"]
+    data_unique_net[r,"Lat_final"]=final_loc[1,"lat_final"]
+    data_unique_net[r,"depth_diff"]=final_loc[1,"depth_diff"]
+  }else{}
+}
+
+
+
+
+#next find location by distance to shore
+location_distance_based=function(Lon,Lat,Perpendicular,distance){
+  #first is a vector of distances from the starting location to choose from
+  dist_m=distance*1000
+  start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
+  position=destPoint(start_position,Perpendicular,dist_m)
+  location=data.frame(lon_final=position[1,"lon"],lat_final=position[1,"lat"])
+  return(location)}
+#run on data
+for (r in 1:nrow(data_unique_net)){
+  print(r)
+  row_c=data_unique_net[r,]
+  if (!is.na(row_c$lat_shore) & is.na(row_c$depth_meter) & !is.na(row_c$distance_from_shore_m)){
+    final_loc=location_distance_based(data_unique_net[r,"lon_shore"],data_unique_net[r,"lat_shore"],data_unique_net[r,"perpendicular"],data_unique_net[r,"distance_from_shore_m"])
+    data_unique_net[r,"Lon_final"]=final_loc[1,"lon_final"]
+    data_unique_net[r,"Lat_final"]=final_loc[1,"lat_final"]
+  }else{}
+}
+
+#Insert depth based on the location
+data_unique_net$loc_DEPTH=extract(med_rast1, data_unique_net[,c("Lon_final","Lat_final")])
+data_unique_net$loc_DEPTH=abs(data_unique_net$loc_DEPTH)
+##Test if location based depth are good
+#summary
+summary(data_unique_net$loc_DEPTH)
+#compare to nets with specified depth
+depth_specified=subset(data_unique_net,depth_specifyed==T)
+depth_specified$depth_diff=depth_specified$loc_DEPTH-depth_specified$depth_meter
+depth_check=data.frame(observed_depth=depth_specified$depth_meter,location_depth=depth_specified$loc_DEPTH,depth_diff=depth_specified$depth_meter-depth_specified$loc_DEPTH)
+summary(depth_check$depth_diff)
+plot(depth_specified$depth_meter,depth_specified$loc_DEPTH)
+
+
+```
+
+
+
+
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#upload the data
+proccessed_data <- read.csv(file=paste(thesis_directory,"all_data_2013_2018.csv",sep = "/"), stringsAsFactors=FALSE)
+#import data frame with shore loctions
+location_data <- read.csv(file = paste(thesis_directory,"locations_lat_on_shore.csv",sep = "/"), stringsAsFactors = FALSE)
+
+colnames(location_data)=c("site","Lat_shore","lon_shore","perpendicular")
+#merge the data
+proccessed_data=merge(proccessed_data,location_data,by.x="new_site",by.y="site")
+
+
+```
+
+
+
+
+
+
+
+-----------------------------
+A code check for nets with no speceis except gamberi, fish, Kalamari and Box general
+and replace the zeros to NA
+I think it is unessesary for me
+------:
+#look for nets with only 'box_general'  
+data_wide$exept_general=rowSums(subset(data_wide, select = -c(net_index,amount.Box_General)))#this line will add a column with the sum of all catchs except 'Box_GEneral'
+data_wide$exept_general_gambari_kalamari=rowSums(subset(data_wide, select = -c(net_index,amount.Box_General,amount.Gambari,amount.Kalamari,amount.Fish)))#this line will add a column with the sum of all catchs except 'Box_General','Gambari' and 'Kalamari', 'Fish'
+
+#return net indexs where there is box general and Gambari/Kalamari but no other amounts
+t_drop=subset(data_wide,exept_general_gambari_kalamari==0)
+net_indexes_to_na=unique(t_drop$net_index)
+
+#replace the 0 to NA's
+for (r in 1:nrow(zero_data)){
+  print(r)
+  row_inf=zero_data[r,]
+  cond_net_index=row_inf$net_index %in% net_indexes_to_na
+  cond_sp=row_inf$sp %in% c("Box_General","Gambari","Kalamari","Fish")
+  if (cond_net_index==T & cond_sp==F){
+    zero_data[r,"amount"]=NA
+  }else{}
+}
+#For a single net- if there are specified species data we can assume that species which are not written wasn't present in the net.
+#In that case for the same net the catch for these species will equal 0
+#For nets with no specieis information we can no if a species was or wasn't in the catch
+#use cast function from reshape2
+add_sp_names=function(data_in){
+sp_in_nets=cast(data_in, net_index ~ Sp_code,value="final_amount.x")
+sp_in_nets[is.na(sp_in_nets)]=0
+#net data
+net_info_dt=data_in[!duplicated(data_in$net_index), ]
+net_info_dt <- net_info_dt[, !(colnames(net_info_dt) %in% c("Sp_code","final_amount.x","species","box","size","unit","final_amount.y","box_numeric" ))]
+#merge
+full_data_zero_filled=merge(net_info_dt,sp_in_nets,by="net_index")
+return(full_data_zero_filled)}
+
+#apply on both data sets
+Full_data_Kg_zeros=add_sp_names(Full_data_Kg)
+Full_data_boxes_zeros=add_sp_names(Full_data_boxes)
+
+
+
+
+#------ !!!!!!! CAUTION !!!!!! ------!!! not run !!!---------------------
+#!!!!not nessecary after run agian the whole code - corect in the raw data!!!!!!!!!!!
+wide_data$kg.Adom[1668]=0
+wide_data$kg.Gambari[419] = wide_data$kg.Adom[419]
+wide_data$kg.Adom[419]=0
+#-----!!!!end of correct not to run in the future!!! ---------------
+
