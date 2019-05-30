@@ -15,32 +15,6 @@ library("raster")
 
 
 
-
-
-
-!!!run every time from every computer!!!
-
-
-#---define passes to any computer ---- 
-required if dont working from project.
-make a variable called "thesis_directory" with my location of the documents.
-this is a good solution if you work on google drive in different computers
-```{r}
-
-
-
-#call the sistem enviromental variable of the directory of this computer
-HOME <- Sys.getenv("HOME")
-#get out the passes to "Documents"
-split_home=unlist(strsplit(HOME,"/"))
-my_home=paste(split_home[1:3],collapse = "/")
-#passes to the folder "data" in my thesis folder
-thesis_directory=paste(my_home,"Google Drive/second degree/thesis/data",sep ="/")
-
-```
-
-
-
 functions to convert the data from raw data to data
 
 
@@ -311,7 +285,7 @@ kg_l<-c(NA)
 uploud the data, and adding draging time column
 ```{r}
 #upload the data
-raw_data <- read.csv(file=paste(thesis_directory,"all_data_2013_2018.csv",sep = "/"), stringsAsFactors=FALSE)
+raw_data <- read.csv(file="data/all_data_2013_2018.csv", stringsAsFactors=FALSE)
 raw_data[raw_data==""]<-NA
 
    
@@ -402,9 +376,9 @@ site=as.vector(unlist(site))
 data=cbind(data,site,Direction)
 
 
-write.csv(data,file = paste(thesis_directory,"R/prosseced data/new_data_prosseced_raw.csv",sep = "/"))
+write.csv(data,file = "prosseced data/new_data_prosseced_raw.csv")
 
-data = read.csv(file =paste( thesis_directory,"R/prosseced data/new_data_prosseced_raw.csv",sep = "/"))
+data = read.csv(file ="prosseced data/new_data_prosseced_raw.csv")
 
 
 ```
@@ -613,79 +587,26 @@ new_data= new_data %>% mutate (Kg= kg_b+kg_l+kg_m+kg_no_size+kg_s)
 
 #erase the unnessesary columns  - now the catch is just in "Amount" and "Unit", with mo size
 new_data =new_data %>% dplyr::select(everything(),-(box_no_size:kg_l))
-write.csv(new_data,file = paste(thesis_directory,"R/prosseced data/new_data_one_kg_col.csv",sep = "/"))
-new_data = read.csv(file = paste(thesis_directory,"R/prosseced data/new_data_one_kg_col.csv",sep = "/"))
+write.csv(new_data,file = "prosseced data/new_data_one_kg_col.csv")
+long_data = read.csv("prosseced data/new_data_one_kg_col.csv")
 
 
 ```
 
-function for putting zeros where species is not found - create raws withe zero
-for the species isn't written.
+Sum the amount [Kg] of duplicates rows
+Convert the data to wide format - with zeros instead of NA
 
-Input:1. Data frame with any species in any net in seperate raw.
-      Contain the columns: "Net_index", "species","Kg"
-      
-      2. Vector with the species names apears in the data$species
-      
-Output: Data frame with the columns:"net_index", "sp", "kg"
-        contain seperate raw for any species in any net - species didn't apear in 
-        a net of the input [species didn't catched in a specific net]
-        is wrriten with amount of 0 and unit of "zero filled"
 
 ```{r}
+ 
 
-data_add_zero_F=function(in_data,sp_list){
-  zero_data=data.frame()
-  #run the loop for any species
-  for (sp in sp_list){
-    print(sp)
-    net_sp=data.frame()
-    #run the loop for any net
-    for(net in unique(in_data$Net_index)){
-      #print(net)
-      #for(net in c("1_21_9_2009")){
-      net_data=in_data[in_data$Net_index==net,]
-      #if the species is in the net, copy it's information
-      if (sp %in% net_data$species){
-        sp_in_net=subset(net_data,net_data$species==sp)
-        net_c=data.frame(net_index=as.character(sp_in_net$Net_index),sp=as.character(sp_in_net$species),kg=as.numeric(sp_in_net$Kg))
-#Itay has also size column. I hasn't, at least for now. 
-        #,size=as.character(sp_in_net$size)        
-#print(net_c)
-        #if the species doesn't exist in the net put it as 0
-      }else{
-        net_c=data.frame(net_index=net,sp=sp,kg=0) 
-        #,size=NA
-      }
-      net_sp=rbind(net_sp,net_c)
-    }
-    zero_data=rbind(zero_data,net_sp)
-  }
-  return(zero_data)
-}
+grouping <- colnames(long_data)[2:30]
 
-```
+wide_data = long_data %>%
+   dplyr:: select(everything(),-X.1) %>%
+  group_by(.dots = grouping) %>% summarize(Kg = sum(Kg)) %>%
+  spread(key = species,value = Kg,fill = 0)
 
-call to the data_add_zero function, save and edit
-
-```{r}
-zero_data=data_add_zero_F(new_data,species_vector)
-
-write.csv(zero_data,file = paste(thesis_directory,"R/prosseced data/temporary_zero_data.csv",sep = "/"))
-zero_data=read.csv(paste(thesis_directory,"R/prosseced data/temporary_zero_data.csv",sep = "/"))
-zero_data=zero_data[,-1]
-
-```
-
-
-Convert the data to wide format - 
-
-!!!------ It arese the duplicate of the Lokus and Musar I created before. need to sum them instead -----!!!!!
-
-```{r}
-zero_data$net_index=as.factor(zero_data$net_index)
-zero_data$sp=as.character(zero_data$sp)
-wide_data <- reshape(zero_data,timevar = "sp",idvar = c("net_index"),direction = "wide")
 
 ```
 
@@ -694,7 +615,7 @@ names of species - from common name to code
 first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to comper
 ```{r}
 #uploud Itay sceintific names [old data]
-sceintific_names=read.csv(paste(thesis_directory,"species_scientific_name.csv",sep = "/"))
+sceintific_names=read.csv("data/species_scientific_name.csv")
 #create and join empty row, to make the datas equal
 emepty_row=rep(NA,13)
 sceintific_names = rbind(sceintific_names, emepty_row)
@@ -716,11 +637,10 @@ names_vector =   colnames(dplyr :: select(wide_data,kg.Anshubi:kg.Aras))
   for (i in 1:length(names_vector)) {
   names_vector[i] = gsub("kg.", "", names_vector[i] )  
   }
-   write.csv(names_vector,file = paste(thesis_directory,"R/prosseced data/names_vector.csv",sep = "/"))
    
    
  #uploud an uplate of the scintific name - data with common names, origin, code, and scientific names - I joined to Itay names sum new species with new code
-code_sceintific_names= read.csv(file=paste(thesis_directory,"species_scientific_name_new_data.csv",sep = "/"), stringsAsFactors=FALSE)
+code_sceintific_names= read.csv(file="data/species_scientific_name_new_data.csv",stringsAsFactors=FALSE)
 
 #order the names in the vector from the data=names vector, and in the sceintific names data
   code_sceintific_names=code_sceintific_names[order(code_sceintific_names$Common_name),]
@@ -758,9 +678,8 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
 #import the raster file, subset and manage projection
 
 #I run thes rows in regular R script, not here in Rmarkdown. has to be OK in git!
-setwd("C:/Users/Admin/Google Drive/second degree/thesis/data")
+library(rgdal)
 med_rast1=raster("map_med.txt")
-
 
 med_rast1[med_rast1<(-300)]<-NA
 med_rast1[med_rast1>0]<-NA
@@ -769,11 +688,11 @@ med_rast1= projectRaster(med_rast1, crs = "+proj=longlat")
 
 
 #import data frame with shore loctions
-location_data <- read.csv(paste(thesis_directory,"locations_lat_on_shore.csv",sep = "/"))
+location_data <- read.csv("data/locations_lat_on_shore.csv")
 colnames(location_data)=c("site","lat_shore","lon_shore","perpendicular")
 
 #merge the data
-proccessed_data=merge(proccessed_data,location_data,by.x="new_site",by.y="site")
+loc_data=merge(wide_data,location_data,by.x="site",by.y="site")
 
 #subset to unique nets using the 'net_index' column
 data_unique_net=proccessed_data[!duplicated(proccessed_data$net_index),]
@@ -894,19 +813,6 @@ plot(depth_specified$depth_meter,depth_specified$loc_DEPTH)
 
 
 
-
-```{r}
-#upload the data
-proccessed_data <- read.csv(file=paste(thesis_directory,"all_data_2013_2018.csv",sep = "/"), stringsAsFactors=FALSE)
-#import data frame with shore loctions
-location_data <- read.csv(file = paste(thesis_directory,"locations_lat_on_shore.csv",sep = "/"), stringsAsFactors = FALSE)
-
-colnames(location_data)=c("site","Lat_shore","lon_shore","perpendicular")
-#merge the data
-proccessed_data=merge(proccessed_data,location_data,by.x="new_site",by.y="site")
-
-
-```
 
 
 
