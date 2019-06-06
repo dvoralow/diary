@@ -695,6 +695,7 @@ loc_data=merge(wide_data,location_data)
 loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,Adom:Vest)
 
 
+
 #phatom to meters
 loc_data$Depth_m=1.8*loc_data$Depth
 
@@ -733,6 +734,13 @@ The function work with a loop for aby relevant row. the onput are spcific cells 
 Output: 
 
 ```{r}
+#check the function:
+Lon=loc_data$Lon_shore[1]
+Lat = loc_data$Lat_shore[1]
+Perpendicular = loc_data$Perpendicular[1]
+target_depth = loc_data$Depth_m[1]
+
+library(car)
 
 location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
 
@@ -742,7 +750,7 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
   
   start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
   
-  #next is the depth in each of the distances
+  #create a data frame with the depath in each Lan-Lot of the specific Perpendicular
   for (d in distances){
     loc=data.frame(destPoint(start_position,Perpendicular,d))
     loc_c=SpatialPoints(loc, proj4string=CRS("+proj=longlat"))
@@ -752,33 +760,39 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
     loc_dt=rbind(loc_dt,loc)#adding to the data frmae of all points in the location
   }
   
+  #if there is no locathions and depth (because the Perpendicular is NA I think) return NA in the Lon_final Lat_final Depth_diff
   if (nrow(loc_dt[complete.cases(loc_dt),])==0){
-    location=data.frame(lon_final=NA,lat_final=NA,Depth_diff=NA)}else{
+    location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=NA)}
+
+   #find the depth is the most similar to the input depth. [min of the differences] 
+  else{
       target_location=which(abs(loc_dt$depth-(-1*target_depth))==min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
       print(min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
   
+      #if there is no similar depthes between the input and map depthes [difference>10], return NA 
           if (min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T)>10){
-        location=data.frame(lon_final=NA,lat_final=NA,Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+        location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
       
+        #choose randomly one of the similar depthes, and then take the properiate Lon+Lat
         }else{
-        target_location=some(target_location,1)
-        location=data.frame(lon_final=loc_dt[target_location,"lon"],lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))}
+        target_location=some(target_location,n=1)
+        location=data.frame(Lon_final=loc_dt[target_location,"lon"],Lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+        }
     }
   return(location)
 }
 
 
 
+library(tidyr)
 
-detach("package:tidyr", unload=TRUE)
 
 #applying the function
 loc_data$Lon_final=rep(NA,nrow(loc_data))
 loc_data$Lat_final=rep(NA,nrow(loc_data))
 loc_data$Depth_diff=rep(NA,nrow(loc_data))
 
-#nrow(loc_data)
-nrow(loc_data)
+
 
 library( geosphere)
 
@@ -786,6 +800,7 @@ for (r in 1:nrow(loc_data)){
   print(r)
   row_c=loc_data[r,]
 
+  #if there is lat and depth, call the function
     if (!is.na(row_c$Lat_shore) & !is.na(row_c$Depth_m)){
     final_loc=location_depth_based(loc_data[r,"Lon_shore"],loc_data[r,"Lat_shore"],loc_data[r,"Perpendicular"],loc_data[r,"Depth_m"])
   
