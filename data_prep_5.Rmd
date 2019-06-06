@@ -700,12 +700,15 @@ loc_data$Distance_from_shore_km=1.8*loc_data$Distance_to_Shore
 
 #next we will work with net which location with lat and lon (the lat and lon are on the shore in front of the fishing location)
 #first we will create 3 new column for indexing the type of data for each net
+
 #for nets with depth
 loc_data$depth_specifyed=rep(NA,nrow(loc_data))
 loc_data[!is.na(loc_data$Depth_m),"Depth_specifyed"]=T
+
 #for nets with distance
 loc_data$distance_specifyed=rep(NA,nrow(loc_data))
 loc_data[!is.na(loc_data$Distance_from_shore_km),"Distance_specifyed"]=T
+
 #for nets with starting position
 loc_data$Location_specifyed=rep(NA,nrow(loc_data))
 loc_data[!is.na(loc_data$Site),"Location_specifyed"]=T
@@ -713,10 +716,12 @@ loc_data[!is.na(loc_data$Site),"Location_specifyed"]=T
 #For net with location and depth we can use new location by crossing the latitude and the depth
 #building a function for calculating the depth in pront of each location
 location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
-  #first is a vector of distances from the starting location to choose from
+
+    #first is a vector of distances from the starting location to choose from
   distances=seq(0,28000,100)
   loc_dt=data.frame()#list of data frames for each location. each data frame with 3 columns: lat,lon,depth
   start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
+  
   #next is the depwth in each of the distances
   for (d in distances){
     loc=data.frame(destPoint(start_position,Perpendicular,d))
@@ -726,38 +731,46 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
     loc$depth=loc_DEPTH
     loc_dt=rbind(loc_dt,loc)#adding to the data frmae of all points in the location
   }
+  
   if (nrow(loc_dt[complete.cases(loc_dt),])==0){
     location=data.frame(lon_final=NA,lat_final=NA,Depth_diff=NA)}else{
       target_location=which(abs(loc_dt$depth-(-1*target_depth))==min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
       print(min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
-      if (min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T)>10){
+  
+          if (min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T)>10){
         location=data.frame(lon_final=NA,lat_final=NA,Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
-      }else{
+      
+        }else{
         target_location=some(target_location,1)
         location=data.frame(lon_final=loc_dt[target_location,"lon"],lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))}
     }
   return(location)
 }
+
 library(tidyr)
+
 detach("package:tidyr", unload=TRUE)
+
 #applying the function
 loc_data$Lon_final=rep(NA,nrow(loc_data))
 loc_data$Lat_final=rep(NA,nrow(loc_data))
 loc_data$Depth_diff=rep(NA,nrow(loc_data))
+
 #nrow(loc_data)
 nrow(loc_data)
+
 for (r in 1:nrow(loc_data)){
   print(r)
   row_c=loc_data[r,]
-  if (!is.na(row_c$lat_shore) & !is.na(row_c$Depth_m)){
+
+    if (!is.na(row_c$lat_shore) & !is.na(row_c$Depth_m)){
     final_loc=location_depth_based(loc_data[r,"Lon_shore"],loc_data[r,"Lat_shore"],loc_data[r,"Perpendicular"],loc_data[r,"Depth_m"])
-    loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
+  
+      loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
     loc_data[r,"Lat_final"]=final_loc[1,"lat_final"]
     loc_data[r,"Depth_diff"]=final_loc[1,"Depth_diff"]
   }else{}
 }
-
-
 
 
 #next find location by distance to shore
