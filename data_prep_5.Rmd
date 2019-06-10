@@ -10,6 +10,7 @@ editor: Dvora Low Ramati
 ```{r}
 library(tidyverse)
 library("raster")
+library(rgdal)
 
 ```
 
@@ -677,7 +678,7 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
 #import the raster file, subset and manage projection
 
 #I run thes rows in regular R script, not here in Rmarkdown. has to be OK in git!
-library(rgdal)
+
 med_rast1=raster("map_med.txt")
 
 med_rast1[med_rast1<(-300)]<-NA
@@ -762,25 +763,27 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
   
   #if there is no locathions and depth (because the Perpendicular is NA I think) return NA in the Lon_final Lat_final Depth_diff
   if (nrow(loc_dt[complete.cases(loc_dt),])==0){
-    location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=NA)}
-
+    location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=NA)
+    
    #find the depth is the most similar to the input depth. [min of the differences] 
-  else{
+  }else{
       target_location=which(abs(loc_dt$depth-(-1*target_depth))==min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
       print(min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
   
       #if there is no similar depthes between the input and map depthes [difference>10], return NA 
           if (min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T)>10){
         location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
+          
       
         #choose randomly one of the similar depthes, and then take the properiate Lon+Lat
-        }else{
+       } else{
         target_location=some(target_location,n=1)
         location=data.frame(Lon_final=loc_dt[target_location,"lon"],Lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
-        }
-    }
+        }#end else
+    }#end else
+  
   return(location)
-}
+}#end function
 
 
 
@@ -808,8 +811,9 @@ for (r in 1:nrow(loc_data)){
     loc_data[r,"Lat_final"]=final_loc[1,"Lat_final"]
     loc_data[r,"Depth_diff"]=final_loc[1,"Depth_diff"]
   
-    }else{}
-}
+    }#end if
+  else{}
+}#end for
 
 
 #next find location by distance to shore
