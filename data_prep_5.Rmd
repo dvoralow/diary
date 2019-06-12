@@ -741,8 +741,7 @@ Lat = loc_data$Lat_shore[1]
 Perpendicular = loc_data$Perpendicular[1]
 target_depth = loc_data$Depth_m[1]
 
-library(car)
-
+library(geosphere)
 location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
 
     #first is a vector of distances from the starting location to choose from
@@ -751,12 +750,12 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
   
   start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
   
-  #create a data frame with the depath in each Lan-Lot of the specific Perpendicular
+  #create a data frame with the depth in each Lan-Lot of the specific Perpendicular
   for (d in distances){
     loc=data.frame(destPoint(start_position,Perpendicular,d))
     loc_c=SpatialPoints(loc, proj4string=CRS("+proj=longlat"))
     loc_UTM=spTransform(loc_c,CRS("+proj=utm +zone=36"))#transform fom degrees to UTM
-    loc_DEPTH=extract(med_rast1, loc_c)#this will give the depths of the individuals
+    loc_DEPTH=raster::extract(med_rast1, loc_c)#this will give the depths of the individuals
     loc$depth=loc_DEPTH
     loc_dt=rbind(loc_dt,loc)#adding to the data frmae of all points in the location
   }
@@ -777,7 +776,7 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
       
         #choose randomly one of the similar depthes, and then take the properiate Lon+Lat
        } else{
-        target_location=some(target_location,n=1)
+        target_location=dplyr:: sample_n(target_location)
         location=data.frame(Lon_final=loc_dt[target_location,"lon"],Lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
         }#end else
     }#end else
