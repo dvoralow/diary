@@ -736,10 +736,10 @@ Output:
 
 ```{r}
 #check the function:
-Lon=loc_data$Lon_shore[1]
-Lat = loc_data$Lat_shore[1]
-Perpendicular = loc_data$Perpendicular[1]
-target_depth = loc_data$Depth_m[1]
+#Lon=loc_data$Lon_shore[2]
+#Lat = loc_data$Lat_shore[2]
+#Perpendicular = loc_data$Perpendicular[2]
+#target_depth = loc_data$Depth_m[2]
 
 library(geosphere)
 location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
@@ -760,7 +760,7 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
     loc_dt=rbind(loc_dt,loc)#adding to the data frmae of all points in the location
   }
   
-  #if there is no locathions and depth (because the Perpendicular is NA I think) return NA in the Lon_final Lat_final Depth_diff
+  #if there is no locathions from the raster, propertiate to the Lon Lat in the input (because the Perpendicular is NA I think) return NA in the Lon_final Lat_final Depth_diff
   if (nrow(loc_dt[complete.cases(loc_dt),])==0){
     location=data.frame(Lon_final=NA,Lat_final=NA,Depth_diff=NA)
     
@@ -776,7 +776,7 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
       
         #choose randomly one of the similar depthes, and then take the properiate Lon+Lat
        } else{
-        target_location=dplyr:: sample_n(target_location)
+        target_location=sample(target_location,1)
         location=data.frame(Lon_final=loc_dt[target_location,"lon"],Lat_final=loc_dt[target_location,"lat"],Depth_diff=min(abs(loc_dt$depth-(-1*target_depth)),na.rm = T))
         }#end else
     }#end else
@@ -814,6 +814,8 @@ for (r in 1:nrow(loc_data)){
   else{}
 }#end for
 
+write.csv(loc_data, "prosseced data/wide_location_temporarty.CSV")
+  loc_data = read.csv("prosseced data/wide_location_temporarty.CSV")
 
 #next find location by distance to shore
 location_distance_based=function(Lon,Lat,Perpendicular,distance){
