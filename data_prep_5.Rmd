@@ -11,6 +11,8 @@ editor: Dvora Low Ramati
 library(tidyverse)
 library("raster")
 library(rgdal)
+library(tidyr)
+library(geosphere)
 
 ```
 
@@ -741,7 +743,7 @@ Output:
 #Perpendicular = loc_data$Perpendicular[2]
 #target_depth = loc_data$Depth_m[2]
 
-library(geosphere)
+
 location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
 
     #first is a vector of distances from the starting location to choose from
@@ -786,7 +788,7 @@ location_depth_based=function(Lon,Lat,Perpendicular,target_depth){
 
 
 
-library(tidyr)
+
 
 
 #applying the function
@@ -795,8 +797,6 @@ loc_data$Lat_final=rep(NA,nrow(loc_data))
 loc_data$Depth_diff=rep(NA,nrow(loc_data))
 
 
-
-library( geosphere)
 
 for (r in 1:nrow(loc_data)){
   print(r)
@@ -831,6 +831,7 @@ for (r in 1:nrow(loc_data)){
   print(r)
   row_c=loc_data[r,]
 
+  #if there are coordinations, depth and distance from shore
     if (!is.na(row_c$lat_shore) & is.na(row_c$Depth_m) & !is.na(row_c$Distance_from_shore_km)){
     final_loc=location_distance_based(loc_data[r,"lon_shore"],loc_data[r,"lat_shore"],loc_data[r,"perpendicular"],loc_data[r,"Distance_from_shore_km"])
     loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
