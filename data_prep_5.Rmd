@@ -817,8 +817,19 @@ for (r in 1:nrow(loc_data)){
 write.csv(loc_data, "prosseced data/wide_location_temporarty.CSV")
   loc_data = read.csv("prosseced data/wide_location_temporarty.CSV")
 
+  
+  
+  
+  #check the function:
+# Lon=loc_data$Lon_shore[7]
+# Lat = loc_data$Lat_shore[7]
+# Perpendicular = loc_data$Perpendicular[7]
+# distance = loc_data$Distance_from_shore_km[7]
+  
+  
 #next find location by distance to shore
 location_distance_based=function(Lon,Lat,Perpendicular,distance){
+  
   #first is a vector of distances from the starting location to choose from
   dist_m=distance*1000
   start_position=SpatialPoints(data.frame(Lon,Lat), proj4string=CRS("+proj=longlat"))#create spetial object
@@ -827,17 +838,22 @@ location_distance_based=function(Lon,Lat,Perpendicular,distance){
   return(location)}
 
 #run on data
+
 for (r in 1:nrow(loc_data)){
   print(r)
   row_c=loc_data[r,]
 
-  #if there are coordinations, depth and distance from shore
-    if (!is.na(row_c$lat_shore) & is.na(row_c$Depth_m) & !is.na(row_c$Distance_from_shore_km)){
-    final_loc=location_distance_based(loc_data[r,"lon_shore"],loc_data[r,"lat_shore"],loc_data[r,"perpendicular"],loc_data[r,"Distance_from_shore_km"])
+  #if there are coordinations and distance from shore, but no depth:
+    if (!is.na(row_c$Lat_shore) & is.na(row_c$Depth_m) & !is.na(row_c$Distance_from_shore_km)){
+    final_loc=location_distance_based(loc_data[r,"Lon_shore"],loc_data[r,"Lat_shore"],loc_data[r,"Perpendicular"],loc_data[r,"Distance_from_shore_km"])
     loc_data[r,"Lon_final"]=final_loc[1,"lon_final"]
     loc_data[r,"Lat_final"]=final_loc[1,"lat_final"]
   }else{}
 }
+
+write.csv(loc_data, "prosseced data/wide_data_1.CSV")
+  loc_data = read.csv("prosseced data/wide_data_1.CSV")
+
 
 #Insert depth based on the location
 loc_data$loc_DEPTH=extract(med_rast1, loc_data[,c("Lon_final","Lat_final")])
