@@ -5,11 +5,20 @@ author: Itay Vjn Rayn
 editor: Dvora Low Ramati
 ---
 
+This script is take the raw data of Levi fisheries diary, as extracted from the "acess" and convert them to data could analized.
+The prossed is first made by Itay Vjn Rayn, on diary from 1987-2013
+Than Dvora Low Ramati get new diaries, from 2013-2018, and it was nessesary to get to the same data, in order to join it and analized it togother.
+This script is editin of some scripts writened by Itay, to one script, with some changes, and some adjistments required for the new dat.
+
+because some of the functoins take time, a lot of exel file exported to the folder "prosseced data", for easy started in any part of the code.
+the final excel file called final_data_2013_2018.CSV.
+
+The input are all the excell files in the folder "data"
 
 
 ```{r}
 library(tidyverse)
-library("raster")
+library(raster)
 library(rgdal)
 library(tidyr)
 library(geosphere)
@@ -615,7 +624,11 @@ wide_data = long_data %>%
 
 
 names of species - from common name to code
-first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to comper
+first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to compair.
+then get inside some new nams, didn't exist on the old data, and put new code to the new species.
+
+Replace the names of the species from common name to code.
+
 ```{r}
 #uploud Itay sceintific names [old data]
 sceintific_names=read.csv("data/species_scientific_name.csv")
@@ -674,12 +687,16 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
 
 
 
+Import a raster file of the Mediterranian Sea, with coordinations and depth. Subset and manage projection.
+
+Some units corrections.
+
+Define collomnse with TRUE or FALSE, for any net, to quick check if there are depth, distance and site.
+
+
 
 
 ```{r}
-#import the raster file, subset and manage projection
-
-#I run thes rows in regular R script, not here in Rmarkdown. has to be OK in git!
 
 med_rast1=raster("map_med.txt")
 
@@ -726,15 +743,28 @@ loc_data[!is.na(loc_data$Site),"Location_specifyed"]=T
 
 ```
 
-For net with location and depth we can use new location by crossing the latitude and the depth
-location_depth_based FUNCTION:
-Calculating the depth in front of each location
+This chunk is extract coordinations for the nets:
+2 functoind, and aply theme on the data.
 
-Input:
+1. For net with location and depth we can use new location by crossing the latitude and the depth
+  location_depth_based FUNCTION:
+  Calculating the depth in front of each location
 
-The function work with a loop for aby relevant row. the onput are spcific cells in a single row of the data: Longititude in sore, Latitude in shore, Perpendicular from the site of the net, and the depth of the net.
+  Input:
 
-Output: 
+  The function work with a loop for aby relevant row. the onput are spcific cells in a single row of the data: Longititude in sore, Latitude in shore,   Perpendicular from the site of the net, and the depth of the net.
+
+  Output: coordination for the net get indise
+  
+  
+  
+2. Find location by distance to shore
+  location_distance_based FUNCTION
+
+  Input: Lon and Lat of the site, Perpendicular, and distance from shore
+  
+  Output: coordination for the net get indise
+
 
 ```{r}
 #check the function:
@@ -855,8 +885,17 @@ write.csv(loc_data, "prosseced data/wide_data_1.CSV")
   loc_data = read.csv("prosseced data/wide_data_1.CSV")
 
 
+```
+
+
+Theise chunk is extract the depthes of any net from the raster, to the colomne "loc_DEPTH", and 
+compare the depthes from the raster to the depthes in the data, if specified.
+
+```{r}
+
+
 #Insert depth based on the location
-loc_data$loc_DEPTH=extract(med_rast1, loc_data[,c("Lon_final","Lat_final")])
+loc_data$loc_DEPTH=raster:: extract(med_rast1, loc_data[,c("Lon_final","Lat_final")])
 loc_data$loc_DEPTH=abs(loc_data$loc_DEPTH)
 
 ##Test if location based depth are good
@@ -864,17 +903,22 @@ loc_data$loc_DEPTH=abs(loc_data$loc_DEPTH)
 summary(loc_data$loc_DEPTH)
 
 #compare to nets with specified depth
-depth_specified=subset(loc_data,depth_specifyed==T)
+depth_specified=subset(loc_data,Depth_specifyed==T)
 depth_specified$Depth_diff=depth_specified$loc_DEPTH-depth_specified$Depth_m
 depth_check=data.frame(observed_depth=depth_specified$Depth_m,location_depth=depth_specified$loc_DEPTH,Depth_diff=depth_specified$Depth_m-depth_specified$loc_DEPTH)
 
 summary(depth_check$Depth_diff)
-plot(depth_specified$Depth_m,depth_specified$loc_DEPTH)
+
+#there are dots until x~270, but most of the dots are intil x=100
+limit=c(0,100)
+plot(depth_specified$Depth_m,depth_specified$loc_DEPTH,xlim=limit, ylim = limit)
+
+#in the 2013-2018 data, the main corolation is good, but there are a lot of locations that the depth in the dairy is much deeper then from the raster.
+#the locatoins in the diary are from the start of any net, but the depths are mean value, and the distance form shore is unknown.
+
+write.csv(loc_data, "prosseced data/final_data_2013_2018.CSV")
 
 ```
-
-
-
      
 
 
@@ -889,60 +933,4 @@ plot(depth_specified$Depth_m,depth_specified$loc_DEPTH)
 
 
 
-
-
-
-
-
-
------------------------------
-A code check for nets with no speceis except gamberi, fish, Kalamari and Box general
-and replace the zeros to NA
-I think it is unessesary for me
-------:
-#look for nets with only 'box_general'  
-data_wide$exept_general=rowSums(subset(data_wide, select = -c(net_index,amount.Box_General)))#this line will add a column with the sum of all catchs except 'Box_GEneral'
-data_wide$exept_general_gambari_kalamari=rowSums(subset(data_wide, select = -c(net_index,amount.Box_General,amount.Gambari,amount.Kalamari,amount.Fish)))#this line will add a column with the sum of all catchs except 'Box_General','Gambari' and 'Kalamari', 'Fish'
-
-#return net indexs where there is box general and Gambari/Kalamari but no other amounts
-t_drop=subset(data_wide,exept_general_gambari_kalamari==0)
-net_indexes_to_na=unique(t_drop$net_index)
-
-#replace the 0 to NA's
-for (r in 1:nrow(zero_data)){
-  print(r)
-  row_inf=zero_data[r,]
-  cond_net_index=row_inf$net_index %in% net_indexes_to_na
-  cond_sp=row_inf$sp %in% c("Box_General","Gambari","Kalamari","Fish")
-  if (cond_net_index==T & cond_sp==F){
-    zero_data[r,"amount"]=NA
-  }else{}
-}
-#For a single net- if there are specified species data we can assume that species which are not written wasn't present in the net.
-#In that case for the same net the catch for these species will equal 0
-#For nets with no specieis information we can no if a species was or wasn't in the catch
-#use cast function from reshape2
-add_sp_names=function(data_in){
-sp_in_nets=cast(data_in, net_index ~ Sp_code,value="final_amount.x")
-sp_in_nets[is.na(sp_in_nets)]=0
-#net data
-net_info_dt=data_in[!duplicated(data_in$net_index), ]
-net_info_dt <- net_info_dt[, !(colnames(net_info_dt) %in% c("Sp_code","final_amount.x","species","box","size","unit","final_amount.y","box_numeric" ))]
-#merge
-full_data_zero_filled=merge(net_info_dt,sp_in_nets,by="net_index")
-return(full_data_zero_filled)}
-
-#apply on both data sets
-Full_data_Kg_zeros=add_sp_names(Full_data_Kg)
-Full_data_boxes_zeros=add_sp_names(Full_data_boxes)
-
-
-
-
-#------ !!!!!!! CAUTION !!!!!! ------!!! not run !!!---------------------
-#!!!!not nessecary after run agian the whole code - corect in the raw data!!!!!!!!!!!
-wide_data$kg.Adom[1668]=0
-wide_data$kg.Gambari[419] = wide_data$kg.Adom[419]
-wide_data$kg.Adom[419]=0
-#-----!!!!end of correct not to run in the future!!! ---------------
 
