@@ -22,6 +22,7 @@ library(raster)
 library(rgdal)
 library(tidyr)
 library(geosphere)
+library(stringr)
 
 ```
 
@@ -569,7 +570,8 @@ Individuals of Lokus, Musar and Sultan Mix with size, I convert to Kg up to the 
     
   }#end for
 
-
+write.csv(kg_data, "prosseced data/kg_data_sizes.CSV")
+  wide_data = read.csv("prosseced data/kg_data_sizes.CSV")
 
 ```
 
@@ -617,7 +619,9 @@ grouping <- colnames(long_data)[2:30]
 wide_data = long_data %>%
    dplyr:: select(everything(),-X.1) %>%
   group_by(.dots = grouping) %>% summarize(Kg = sum(Kg)) %>%
-  spread(key = species,value = Kg,fill = 0)
+  spread(key = species,value = Kg,fill = 0) %>%
+  ungroup()
+
 
 
 ```
@@ -643,13 +647,14 @@ species_vector_sort=species_vector[order(species_vector)]
 
 
 
-#arase from the data empty columns.
+#erase from the data empty columns.
 #The Jelly fish had just 5 records, so I chose to arease it [I think most of the time they not reported]
-wide_data=wide_data %>% dplyr::select(everything(),-kg.Jelly_Fish, -kg.barbon_vadim,  -kg.Gerbid_new, -kg.Vest)
+wide_data=wide_data %>% dplyr::select(everything(),-Jelly_Fish, -Vest)
+
 #cerate name vector
-names_vector =   colnames(dplyr :: select(wide_data,kg.Anshubi:kg.Aras))
+names_vector =   colnames(dplyr :: select(wide_data,Adom:Varod))
   
-  #remove the Kg form the names
+  #If there are "kg" at the start of any name - remove the Kg form the names
   for (i in 1:length(names_vector)) {
   names_vector[i] = gsub("kg.", "", names_vector[i] )  
   }
@@ -665,20 +670,27 @@ code_sceintific_names= read.csv(file="data/species_scientific_name_new_data.csv"
   #join the vectors to ensute they equal
 code_sceintific_names=cbind(code_sceintific_names,names_vector)
 
-#replace the "kg" in the colnames of the species
-  library(stringr)
+#replace the "kg" in the colnames of the species - agian, no need if there is no kg in the name
+  
      wide_data = wide_data %>% rename_at(vars(starts_with("kg.")), funs(str_replace(., "kg.", "")))
- 
- #order the data
-  wide_data=wide_data[,order(colnames(wide_data))]
-  wide_data= wide_data %>% dplyr::select(net_index,everything())
 
-  #replace the colnames from common names to codes in cumsy way...
-  code_vector=code_sceintific_names$Sp_code
-  for (i in 1:length(names_vector))
-  {
-    names(wide_data)[i+1]=code_vector[i]
-  }#end for
+     
+  #sum different common name reffer to the same species:
+  wide_data = wide_data %>% mutate(Hazaim_1 = Hazaim+Hazir, Lokus_1 = Lokus+Lokus_manot, Adom_1 = Adom+Soltan, Cristal_1 = Cristal+Gambari, Denis_1 = Denis+Tziporot, Hulim_1 = Hulim+Makarunim, Soltan_Fake_1 = Soltan_Fake+Soltan_Hul) %>% 
+    dplyr:: select(everything(), -Hazaim, -Hazir,-Lokus, -Lokus_manot, -Adom, -Soltan, -Cristal, -Gambari, -Denis, -Tziporot, -Hulim, -Makarunim,  -Soltan_Fake, -Soltan_Hul) %>% 
+    dplyr:: rename( Hazaim = Hazaim_1, Lokus = Lokus_1, Adom =Adom_1,Cristal =  Cristal_1, Denis = Denis_1, Hulim = Hulim_1, Soltan_Fake = Soltan_Fake_1)
+
+  
+  #erase raws with common names with identical code, respectively to the wide_data below
+  common_code_unique = code_sceintific_names[code_sceintific_names$Common_name != "Hazir"  &  code_sceintific_names$Common_name != "Lokus_manot"  &  code_sceintific_names$Common_name != "Soltan"  &  code_sceintific_names$Common_name != "Gambari"  &  code_sceintific_names$Common_name != "Tziporot"  &  code_sceintific_names$Common_name != "Makarunim"  &  code_sceintific_names$Common_name != "Soltan_Hul" ,] 
+  
+  #create vectors with the unique common names and code
+  common_names = common_code_unique$Common_name
+  code_vector_unique = common_code_unique$Sp_code
+  
+  #replace the name of the catch to the code instead of common names
+ wide_data = wide_data %>%  rename_at(vars(common_names), ~ code_vector_unique)
+  
   
   write.csv(wide_data, "prosseced data/wide_new_data.CSV")
   wide_data = read.csv("prosseced data/wide_new_data.CSV")
@@ -712,7 +724,8 @@ colnames(location_data)=c("Site","Lat_shore","Lon_shore","Perpendicular")
 
 #merge the data and order the columns
 loc_data=merge(wide_data,location_data)
-loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,Adom:Vest)
+
+loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,Eer:Upo)
 
 
 

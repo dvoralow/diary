@@ -21,6 +21,7 @@ Contain trawl diaries - the raw data, and the code cleaning and ordereing them
   The final data called: "final_data_2013_2018"
 	Final Itay data, the data from 1987-2013 called "final_data_1987_2013", thies data create by Itay Vjn Rain, and all the "data prep" script is to get the new data to identical form.
 	I didn't run the 1987-2013 data again on the new script.
+	The file "kg_data_sizes" contain the data in the long format, withe the knowledge about sizes if reported. The size are vanish in the wide format of the data
   
   
 The folder "acess" contain an acess template "untouch_template", for use for new diary in the future.
