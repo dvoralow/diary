@@ -917,6 +917,18 @@ plot(depth_specified$Depth_m,depth_specified$loc_DEPTH,xlim=limit, ylim = limit)
 #the locatoins in the diary are from the start of any net, but the depths are mean value, and the distance form shore is unknown.
 
 write.csv(loc_data, "prosseced data/final_data_2013_2018.CSV")
+loc_data = read.csv("prosseced data/final_data_2013_2018.CSV")
+
+itay_data = read.csv("prosseced data/final_data_1987_2013.CSV")
+
+
+
+itay_col = colnames(itay_data)
+dvora_col = colnames(loc_data)
+itay_col = c(itay_col,c(rep(NA,10)))
+
+compare_data=cbind(itay_col,dvora_col)
+
 
 ```
      
