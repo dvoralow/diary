@@ -620,7 +620,7 @@ wide_data = long_data %>%
    dplyr:: select(everything(),-X.1) %>%
   group_by(.dots = grouping) %>% summarize(Kg = sum(Kg)) %>%
   spread(key = species,value = Kg,fill = 0) %>%
-  ungroup()
+  dplyr:: ungroup()
 
 
 
@@ -681,7 +681,11 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
     dplyr:: rename( Hazaim = Hazaim_1, Lokus = Lokus_1, Adom =Adom_1,Cristal =  Cristal_1, Denis = Denis_1, Hulim = Hulim_1, Soltan_Fake = Soltan_Fake_1)
 
   
+  #------!!!!-----need to check if the short code is working [with the !(%in%)], if work, to erase the long below---!!!------
+  
   #erase raws with common names with identical code, respectively to the wide_data below
+  common_code_unique = code_sceintific_names[!(code_sceintific_names$Common_name %in% c("Hazir","Lokus_manot","Soltan", "Gambari", "Tziporot", "Makarunim", "Soltan_Hul")),]
+  
   common_code_unique = code_sceintific_names[code_sceintific_names$Common_name != "Hazir"  &  code_sceintific_names$Common_name != "Lokus_manot"  &  code_sceintific_names$Common_name != "Soltan"  &  code_sceintific_names$Common_name != "Gambari"  &  code_sceintific_names$Common_name != "Tziporot"  &  code_sceintific_names$Common_name != "Makarunim"  &  code_sceintific_names$Common_name != "Soltan_Hul" ,] 
   
   #create vectors with the unique common names and code
@@ -842,7 +846,7 @@ loc_data$Depth_diff=rep(NA,nrow(loc_data))
 
 
 for (r in 1:nrow(loc_data)){
-  print(r)
+  #print(r)
   row_c=loc_data[r,]
 
   #if there is lat and depth, call the function
@@ -883,7 +887,7 @@ location_distance_based=function(Lon,Lat,Perpendicular,distance){
 #run on data
 
 for (r in 1:nrow(loc_data)){
-  print(r)
+ # print(r)
   row_c=loc_data[r,]
 
   #if there are coordinations and distance from shore, but no depth:
