@@ -936,19 +936,71 @@ plot(depth_specified$Depth_m,depth_specified$loc_DEPTH,xlim=limit, ylim = limit)
 write.csv(loc_data, "prosseced data/final_data_2013_2018.CSV")
 loc_data = read.csv("prosseced data/final_data_2013_2018.CSV")
 
-itay_data = read.csv("prosseced data/final_data_1987_2013.CSV")
-
-
-
-itay_col = colnames(itay_data)
-dvora_col = colnames(loc_data)
-itay_col = c(itay_col,c(rep(NA,10)))
-
-compare_data=cbind(itay_col,dvora_col)
 
 
 ```
-     
+
+
+join Itay data [1987-2013] and the new data [2013-2018]
+make an identical format for them, and bind
+
+```{r}
+
+
+itay_data = read.csv("prosseced data/final_data_1987_2013.CSV")
+dvora_data = loc_data
+
+itay_col = colnames(itay_data)
+dvora_col = colnames(dvora_data)
+compare_data = cbind(itay_col,dvora_col)
+
+
+
+
+
+#insert column exist in the other data
+dvora_data$Mae = 0
+dvora_data$Mce = 0
+dvora_data$Sma = 0
+dvora_data$Gambari_net = (dvora_data$Net_Type == "Gambari")
+dvora_data = dvora_data %>% tidyr::unite (comment, c(Commants, Comments), sep = ". ", remove = TRUE)
+
+
+itay_data$Dce = 0
+itay_data$Pin = 0
+itay_data$Psa = 0
+itay_data$Sha = 0
+itay_data$Sig = 0
+itay_data$Many.Nasralas = NA
+itay_data$Distance_from_shore_km = 1.8*itay_data$Distance_to_Shore
+itay_data = itay_data %>% mutate(net = X.1)
+
+#erase unnessecary columns end make identical order of the columns
+  dvora_data =dvora_data %>%  dplyr::select(-High_Sea, -Location_specifyed, -Distance_specifyed, -Depth_specifyed, -Depth_diff, -Missing, -Speed, -X, -X.1, -X.2, -X.3, -Net_Type) %>% dplyr::select(Net:Storm, box_only:Draging_time, Gambari_net, Distance_from_shore_km, Depth_m, Site:Perpendicular, Lon_final:loc_DEPTH, everything())
+
+  itay_data = itay_data %>% dplyr::select(-gambari_net, -Drag_duration, -Estimated_price, -Origin, -Market_price, -price_source, -fisherman_price, -scintific_name, -Store, -Fishing_field_text, -sp_resolotion, -X, -X.1, -X.2, -Net) %>% dplyr::select(net, net_index, Start_hh:Storm, box_only, night_drag_prawn, Many.Nasralas, Very_weak, Duration,Gambari_net, Distance_from_shore_km, depth_meter, everything())
+  
+ #sort the catch part 
+dvora_data_sort = dvora_data %>%dplyr:: select(Eer:Sma) %>%dplyr:: select(sort(current_vars()))
+itay_data_sort = itay_data %>%dplyr:: select(Aal:Sig) %>% dplyr::select(sort(current_vars()))
+
+#select all the columns except catch part
+dvora_data_temp =dplyr:: select(dvora_data, Net:loc_DEPTH)
+itay_data_temp =dplyr:: select(itay_data, net:loc_DEPTH)
+
+#bind to 1 dataframe with the cathc sorting
+dvora_data = cbind(dvora_data_temp,dvora_data_sort)
+itay_data = cbind(itay_data_temp,itay_data_sort)
+
+#set identical colnames to the 2 dataframes
+names = colnames(itay_data)
+colnames(dvora_data) = names
+
+#bind to 1 data
+all_data = bind(itay_data,dvora_data)
+write.csv(all_data, "prosseced data/final_data_1987_2018.CSV")
+  
+```
 
 
 
