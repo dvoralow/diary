@@ -1,35 +1,53 @@
 # diary
-Contain trawl diaries - the raw data, and the code cleaning ordereing them, with some basic analyzed also.
+The repository contains trawl fishing diaries - the raw data, and the code cleaning and ordereing them, with some basic analyses also.
 
-"data_prep_5" is the script clean and ordere the raw data. The origin of thes script wrote by Itay Vjn Rain, and Dvora Low Ramati join and edit it's to one script, with some changes.
+"data_prep_5" is the cleaning and ordering script of the raw data. This script was originally written by Itay Vjn Rain, and edited by Dvora Low Ramati.
 
-"map_med" is a raster of the Mediterranian Sea, whith coordinations and depthes, require in the script.
+"map_med" is a raster file of a bathymetric map of the Mediterranean Sea, required in the script.
 
-"data" folder contain excel files used as input in the script:
-  "all_data_2013_2018" - the raw data, diaries exported from "access" software and joined togother. 
-  some cleaning such as - make al the site names uniform, made on the excel file, not in the script.
-  
-  "locations_lat_on_sore" contain the sites in the data, with their estimated coordinations on shore, and the Perpendicular - the degree of vertical line to the sohre in the site.
-  
-  "species_scientific_name" contain the common names, sceintific names and code fo the species. Species fishery doesn't distinguish between them are in the same line, with the same code and common name.
-  
-  "species_scientific_name_new_data" contain also species doesn't exist in the 1987-2013 diaries, and exist in the new data - 2013-2018 diaries.
 
-	The folder: "raw_excel_1987_2013" conation all the raw excels file exported from the access software by Itay Vjn Rain
-  
-  The folder "prosseced data" contain all the data exported throuout the script for easy return to any step in the script. 
-  
-	The final data called: "final_data_2013_2018"
+#--- FOLDERS ---#
 
-	Final Itay data, the data from 1987-2013 called "final_data_1987_2013", thies data create by Itay Vjn Rain, and all the "data prep" script purpose was to get the new data to identical format as Itay data.
+--"DATA" FOLDER:
+
+"data" folder contains excel files used as input in the script:
+
+  1. "all_data_2013_2018" - the raw data, diaries exported from "access" software and joined together. 
+
+  	Some cleaning such as - make all the site names uniform, were made in the excel file, not in the script.
+  
+  2. "locations_lat_on_sore" contains geogrphic data of fishing sites: their estimated coordinations on shore, and the perpendicular from the shore line, in degrees.
+  
+  3. "species_scientific_name" contains the common names, sceintific names and code names of the species. Some rows contain two or more scientific names, 
+	since fisherman don't distinguish among them. These species has the same code name and common name.
+  
+  4. "species_scientific_name_new_data" contains also species that doesn't exist in the 1987-2013 diaries, and exist in the new data - 2013-2018 diaries.
+
+
+	5. The folder: "raw_excel_1987_2013" conations all the raw excels file exported from the access software by Itay Vjn Rain
+
+
+-- "PROSSECED DATA" FOLDER---
+  
+  The folder "prosseced data" contains all the data exported from the script. The important ones are: 
+  
+	1. "final_data_2013_2018" - the final output of the script. 
+
+	2."final_data_1987_2013" - Final Itay data, from 1987-2013. This data were created by Itay Vjn Rain, and all the "data prep" script purpose was to 
+	get the new data to an identical format as Itay's data.
 
 	I didn't run the 1987-2013 data again on the new script.
 
-	The file "kg_data_sizes" contain the data in the long format, with the knowledge about sizes if reported. The size are vanish in the wide format of the data
+	3. "kg_data_sizes" contains the data in the long format, with sizes if reported (size per box/ind., in Kg). The sizes are vanished in the wide format of the data.
 
-	The file "final_data_1987_2018" contain the 2 data,bind togother after cleaning and reordering the columns to identical format
+	4. "final_data_1987_2018" contains the 2 data - 1987-2013 data and 2013-2018, bind together after cleaning and reordering the columns to an identical format.
   
-  
-The folder "acess" contain an acess template "untouch_template", for use for new diary in the future.
 
-and the file "Instructions for entering logs" contain some comments form Itay Vjn Rain abuot the way to entering the diaries in to the acees, in order to create uniform data.
+--"ACESS" FOLDER"--
+ 
+   The folder "acess" contains files for entry of diaries in the future.
+  
+	1.  "untouch_template", an access template, for data entry of diaries in the future.
+
+	2. "Instructions for entering logs" contains instructions and comments abuot how to enter the diaries in to the access,  
+	in order to create uniform data [in Hebrew].
