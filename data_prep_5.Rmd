@@ -984,6 +984,9 @@ itay_data = itay_data %>% mutate(net = X.1)
 dvora_data_sort = dvora_data %>%dplyr:: select(Eer:Sma) %>%dplyr:: select(sort(current_vars()))
 itay_data_sort = itay_data %>%dplyr:: select(Aal:Sig) %>% dplyr::select(sort(current_vars()))
 
+#convert itay data from boxes to kg
+itay_data_sort = itay_data_sort*10
+
 #select all the columns except catch part
 dvora_data_temp =dplyr:: select(dvora_data, Net:loc_DEPTH)
 itay_data_temp =dplyr:: select(itay_data, net:loc_DEPTH)
