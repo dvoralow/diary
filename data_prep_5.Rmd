@@ -297,8 +297,11 @@ kg_l<-c(NA)
 
 uploud the data, and adding draging time column
 ```{r}
-#upload the data
+#upload the data my data
 raw_data <- read.csv(file="data/all_data_2013_2018.csv", stringsAsFactors=FALSE)
+#aploud Itay data
+raw_data <- read.csv(file="data/raw_data_1976_2013.csv", stringsAsFactors=FALSE)
+
 raw_data[raw_data==""]<-NA
 
    
