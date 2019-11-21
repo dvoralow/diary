@@ -24,7 +24,7 @@ The repository contains trawl fishing diaries - the raw data, and the code clean
   4. "species_scientific_name_new_data" contains also species that doesn't exist in the 1987-2013 diaries, and exist in the new data - 2013-2018 diaries.
 
 
-	5. The folder: "raw_excel_1987_2013" conations all the raw excels file exported from the access software by Itay Vjn Rain
+	5. "raw_data_1976_2013" the raw data, diaries exported from "access" software by Itay Vjn Rain  and joined together. 
 
 
 -- "PROSSECED DATA" FOLDER---
