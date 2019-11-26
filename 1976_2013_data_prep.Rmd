@@ -301,7 +301,7 @@ uploud the data, and adding draging time column
 ```{r}
 
 #uploud the data
-raw_data_1976_2013 <- read.csv("~/diary/data/raw_data_1976_2013.csv")
+raw_data <- read.csv("~/diary/data/raw_data_1976_2013.csv")
 
 raw_data[raw_data==""]<-NA
 
@@ -409,23 +409,22 @@ data = read.csv(file ="prosseced 1976_2013/new_data_prosseced_raw.csv")
 temp_data<-c()
 
 #create vector contain the species names
- species_vector =   colnames(dplyr :: select(data,Anshubi:Daorim,-(Missing), -(Comments), -(Very_weak),-(Fishing_field_text),-(Speed), -(Net_Type), -(night), -(Night_darg), -(Dragging_time_comments), -(Night_drag), -(night_drag_prawn), -(Night_drag_comments)))
+ species_vector =   colnames(dplyr :: select(data,Anshubi:Daorim,-(Missing), -(Comments), -(Very_weak),-(Fishing_field_text),-(Speed), -(Net_Type), -(night), -(Night_darg), -(Dragging_time_comments), -(night_drag_prawn), -(Night_drag_comments)))
  
 #
-#nets<-c(1:length(data[,1]))
-nets<-c(1:100)
-
-
-
+nets<-c(1:length(data[,1]))
+#nets<-c(7700:7800)
 
 #loop get over any row in the data an call to the "processing" function for sepertate and sort the catch strings
 #[more explanation above, in the function chunk]
-
 #run on any row
+
   for(i in nets){
 
-  #create empty data frame with the required columns
- #   net_template<-cbind(data[1:night_drag.place][i,], "Very_weak"=data$Very_weak[i], "Missing"= data$Missing[i], "Comments"= data$Comments[i], "Draging_time"=data$Draging_time[i], "Net_index"=data$Net_index[i],"Site"=data$site[i],"Direction"=data$Direction[i], species, box_no_size, box_b, box_s, box_m, box_l, ind_no_size, ind_b, ind_s, ind_m, ind_l, ind_kg, kg_no_size, kg_b, kg_s, kg_m,kg_l) # net data might have more than 1 rows 
+ #create empty data frame with the required columns - the whle columns exept the species names, and colomncs about size
+   net_template<-cbind(data[1:16][i,], "Very_weak"=data$Very_weak[i], "Missing"= data$Missing[i], "Comments"= data$Comments[i],"Fishing_field_text" = data$Fishing_field_text[i], "Speed" = data$Speed[i],"Net_Type" = data$Net_Type[i], "night" = data$night[i], "Night_drag" = data$Night_darg[i],"Dragging_time_comments" = data$Dragging_time_comments[i], "night_drag_prawn" = data$night_drag_prawn[i],"Night_drag_comments" = data$Night_drag_comments[i],"Draging_time"=data$Draging_time[i], "Net_index"=data$Net_index[i],"Site"=data$site[i],"Direction"=data$Direction[i], species, box_no_size, box_b, box_s, box_m, box_l, ind_no_size, ind_b, ind_s, ind_m, ind_l, ind_kg, kg_no_size, kg_b, kg_s, kg_m,kg_l) # net data might have more than 1 rows
+   
+  
  
   net<-c()
   
@@ -447,16 +446,16 @@ nets<-c(1:100)
       cell_length=strsplit(cell_length," ")
     
       #If it have 8 strings, split to 2 rows:
-      if (length(cell_length[[1]])==8)
-      {
-        cell_length_A=paste(cell_length[[1]][1],cell_length[[1]][2],cell_length[[1]][3],cell_length[[1]][4])
-        cell_length_B=paste(cell_length[[1]][5],cell_length[[1]][6],cell_length[[1]][7],cell_length[[1]][8])
-       split_row=data[i,]
-       split_row[20:81]=NA
-         split_row[j]= cell_length_B
-        data[i,j]=cell_length_A
-        data=rbind(data,split_row)
-      }#end if
+      # if (length(cell_length[[1]])==8)
+      # {
+      #   cell_length_A=paste(cell_length[[1]][1],cell_length[[1]][2],cell_length[[1]][3],cell_length[[1]][4])
+      #   cell_length_B=paste(cell_length[[1]][5],cell_length[[1]][6],cell_length[[1]][7],cell_length[[1]][8])
+      #  split_row=data[i,]
+      #  split_row[20:81]=NA
+      #    split_row[j]= cell_length_B
+      #   data[i,j]=cell_length_A
+      #   data=rbind(data,split_row)
+      # }#end if
       
       #call to the process function - order the data to seperate columns
       species_data<-processing(data[i,j],species_template)
@@ -467,7 +466,7 @@ nets<-c(1:100)
   temp<-rbind(temp_data,net)
   temp_data<-temp
 }#end i loop
-
+ 
 
 
 
