@@ -11,7 +11,7 @@ This script is take the raw data of Levi fisheries diary, as extracted from the 
 This script is for create data that live the data of size of the catch, on 1976-2013 data
 This script is editin of some scripts writened by Itay, to one script, with some changes, and some adjistments required for the new dat.
 
-because some of the functoins take time, a lot of exel file exported to the folder "prosseced 1976_2013", for easy started in any part of the code.
+because some of the functoins take time, a lot of exel file exported to the folder "pross size 1976_2013", for easy started in any part of the code.
 the final excel file called final_data_2013_2018.CSV.
 
 
@@ -384,7 +384,7 @@ site=as.vector(unlist(site))
 data=cbind(data,site,Direction)
 
 
-write.csv(data,file = "prosseced 1976_2013/new_data_prosseced_raw.csv")
+write.csv(data,file = "pross size 1976_2013/new_data_prosseced_raw.csv")
 
 
 
@@ -398,7 +398,7 @@ This chunk is oredering the data to one line for any single catch, with all the 
 !!!--- Befor runing that chunk, need to run the function chunk (second chunk, after the libraries)---!!!
 ```{r}
 
-data = read.csv(file ="prosseced 1976_2013/new_data_prosseced_raw.csv")
+data = read.csv(file ="pross size 1976_2013/new_data_prosseced_raw.csv")
 
 temp_data<-c()
 
@@ -590,13 +590,12 @@ Individuals of Lokus, Musar and Sultan Mix with size, I convert to Kg up to the 
     
   }#end for
 
-write.csv(kg_data, "kg_data_sizes.CSV")
-  kg_data = read.csv("prosseced 1976_2013/kg_data_sizes.CSV")
+write.csv(kg_data, "pross size 1976_2013/kg_data_sizes.CSV")
+ 
 
 ```
 
 
-#!!!!!!------I run the code just until here. I geuss more changes will requreid----!!!!. 
 
  swich to other data - new_data.
   if we want to save the information about size, it's required to split any row with 2 [or 3] different sizes, and to make it 2 rows.
@@ -605,6 +604,7 @@ write.csv(kg_data, "kg_data_sizes.CSV")
 
  
 ```{r}
+ kg_data = read.csv("pross size 1976_2013/kg_data_sizes.CSV")
 
 #switch to "new_data" because I will erase the sizes information
 new_data=kg_data
@@ -616,37 +616,13 @@ new_data=dplyr:: select(new_data,-(box_no_size:kg_l))
 new_data=cbind(new_data,temp_data)
 new_data=dplyr:: select(new_data,Net,Net_index,everything())
 
-#sum the  kg columns 
-new_data$kg_s=as.numeric(new_data$kg_s)
-new_data= new_data %>% mutate (Kg= kg_b+kg_l+kg_m+kg_no_size+kg_s)
-
-#erase the unnessesary columns  - now the catch is just in "Amount" and "Unit", with mo size
-new_data =new_data %>% dplyr::select(everything(),-(box_no_size:kg_l))
-write.csv(new_data,file = "prosseced 1976_2013/new_data_one_kg_col.csv")
-long_data = read.csv("prosseced 1976_2013/new_data_one_kg_col.csv")
-
-
-```
-
-Sum the amount [Kg] of duplicates rows
-Convert the data to wide format - with zeros instead of NA
-
-
-```{r}
- 
-
-grouping <- colnames(long_data)[2:30]
-
-wide_data = long_data %>%
-   dplyr:: select(everything(),-X.1) %>%
-  group_by(.dots = grouping) %>% summarize(Kg = sum(Kg)) %>%
-  spread(key = species,value = Kg,fill = 0) %>%
-  dplyr:: ungroup()
+#erase the unnessesary columns  
+new_data =new_data %>% dplyr::select(everything(),-(box_no_size:ind_kg))
+write.csv(new_data,file = "pross size 1976_2013/kg_data_sizes.csv")
 
 
 
 ```
-
 
 names of species - from common name to code
 first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to compair.
@@ -655,6 +631,9 @@ then get inside some new nams, didn't exist on the old data, and put new code to
 Replace the names of the species from common name to code.
 
 ```{r}
+long_data = read.csv("pross size 1976_2013/kg_data_sizes.csv") 
+#I am here!
+
 #uploud Itay sceintific names [old data]
 sceintific_names=read.csv("data/species_scientific_name.csv")
 #create and join empty row, to make the datas equal
@@ -717,8 +696,8 @@ code_sceintific_names=cbind(code_sceintific_names,names_vector)
  wide_data = wide_data %>%  rename_at(vars(common_names), ~ code_vector_unique)
   
   
-  write.csv(wide_data, "prosseced 1976_2013/wide_new_data.CSV")
-  wide_data = read.csv("prosseced 1976_2013/wide_new_data.CSV")
+  write.csv(wide_data, "pross size 1976_2013/wide_new_data.CSV")
+  wide_data = read.csv("pross size 1976_2013/wide_new_data.CSV")
 
 ```
 
@@ -882,8 +861,8 @@ for (r in 1:nrow(loc_data)){
   else{}
 }#end for
 
-write.csv(loc_data, "prosseced 1976_2013/wide_location_temporarty.CSV")
-  loc_data = read.csv("prosseced 1976_2013/wide_location_temporarty.CSV")
+write.csv(loc_data, "pross size 1976_2013/wide_location_temporarty.CSV")
+  loc_data = read.csv("pross size 1976_2013/wide_location_temporarty.CSV")
 
   
   
@@ -919,8 +898,8 @@ for (r in 1:nrow(loc_data)){
   }else{}
 }
 
-write.csv(loc_data, "prosseced 1976_2013/wide_data_1.CSV")
-  loc_data = read.csv("prosseced 1976_2013/wide_data_1.CSV")
+write.csv(loc_data, "pross size 1976_2013/wide_data_1.CSV")
+  loc_data = read.csv("pross size 1976_2013/wide_data_1.CSV")
 
 
 ```
@@ -954,8 +933,8 @@ plot(depth_specified$Depth_m,depth_specified$loc_DEPTH,xlim=limit, ylim = limit)
 #in the 2013-2018 data, the main corolation is good, but there are a lot of locations that the depth in the dairy is much deeper then from the raster.
 #the locatoins in the diary are from the start of any net, but the depths are mean value, and the distance form shore is unknown.
 
-write.csv(loc_data, "prosseced 1976_2013/final_data_2013_2018.CSV")
-loc_data = read.csv("prosseced 1976_2013/final_data_2013_2018.CSV")
+write.csv(loc_data, "pross size 1976_2013/final_data_2013_2018.CSV")
+loc_data = read.csv("pross size 1976_2013/final_data_2013_2018.CSV")
 
 
 
@@ -968,7 +947,7 @@ make an identical format for them, and bind
 ```{r}
 
 
-itay_data = read.csv("prosseced 1976_2013/final_data_1987_2013.CSV")
+itay_data = read.csv("pross size 1976_2013/final_data_1987_2013.CSV")
 dvora_data = loc_data
 
 itay_col = colnames(itay_data)
@@ -1022,7 +1001,7 @@ colnames(dvora_data) = names
 
 #bind to 1 data
 all_data = bind(itay_data,dvora_data)
-write.csv(all_data, "prosseced 1976_2013/final_data_1987_2018.CSV")
+write.csv(all_data, "pross size 1976_2013/final_data_1987_2018.CSV")
   
 ```
 
