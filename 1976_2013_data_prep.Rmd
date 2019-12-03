@@ -18,7 +18,7 @@ the final excel file called final_data_2013_2018.CSV.
 The input are all the excell files in the folder "data"
 
 I (Dvora) made that script for the 2013-2018 data, and use Itay data for 1976-2013.
-Than I run the beginig of the code for 1976-2013 data, and made sum changes to fit the different data, I didn't finish that work. 
+Than I run the beginig of the code for 1976-2013 data, and made sum changes to fit the different data (until raw 580), I didn't finish that work. 
 More corections are required to run the 1976-2013 raw data and create the final data.
 
 ```{r}
