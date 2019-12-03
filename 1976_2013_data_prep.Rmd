@@ -17,6 +17,9 @@ the final excel file called final_data_2013_2018.CSV.
 
 The input are all the excell files in the folder "data"
 
+I (Dvora) made that script for the 2013-2018 data, and use Itay data for 1976-2013.
+Than I run the beginig of the code for 1976-2013 data, and made sum changes to fit the different data, I didn't finish that work. 
+More corections are required to run the 1976-2013 raw data and create the final data.
 
 ```{r}
 library(tidyverse)
@@ -577,6 +580,7 @@ write.csv(kg_data, "prosseced 1976_2013/kg_data_sizes.CSV")
 ```
 
 
+#!!!!!!------I run the code just until here. I geuss more changes will requreid----!!!!. 
 
  swich to other data - new_data.
   if we want to save the information about size, it's required to split any row with 2 [or 3] different sizes, and to make it 2 rows.
