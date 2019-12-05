@@ -626,78 +626,84 @@ write.csv(new_data,file = "pross size 1976_2013/kg_data_sizes.csv")
 
 names of species - from common name to code
 first we need to put the sceinticifcs names and code from Itay, side by side neer our species common name, to compair.
-then get inside some new nams, didn't exist on the old data, and put new code to the new species.
+I export the execel file and order there the names.
 
 Replace the names of the species from common name to code.
 
 ```{r}
-long_data = read.csv("pross size 1976_2013/kg_data_sizes.csv") 
-#I am here!
+kg_data = read.csv("pross size 1976_2013/kg_data_sizes.csv") 
+
 
 #uploud Itay sceintific names [old data]
 sceintific_names=read.csv("data/species_scientific_name.csv")
-#create and join empty row, to make the datas equal
-emepty_row=rep(NA,13)
-sceintific_names = rbind(sceintific_names, emepty_row)
+
 sceintific_names = dplyr::select(sceintific_names, Sp_code, Common_name, Sceintific_name=scintific_name)
 #sort by A-Z of the common name
 sceintific_names = sceintific_names[order(sceintific_names$Common_name),]
-#sort the vector from new data and join
-species_vector_sort=species_vector[order(species_vector)]
+
+#sort the names vector from the data
+species_vector = unique(kg_data$species)
+species_vector= sort(species_vector)
+
+
+#create and join empty row, to make the datas equal
+empty_row = data.frame(matrix(NA, nrow = 31, ncol = 3)) 
+empty_row <- setNames(empty_row, c("Sp_code","Common_name","Sceintific_name"))
+
+sceintific_names = rbind(sceintific_names, empty_row)
+
+sceintific_names = cbind(sceintific_names, species_vector)
+#I export that file and order in the excel file the the namesm, creating new file, "species to scientific code_for raw 1976_2013 data" with the whole names exept some rare and unknown common names.
+
+
+#erase from the data rows with no data
+#!!!---I get out some of the shrimps, because they not nessesary to my reasearch.---!!!
+#I droped out some species eith unknown name and a small amount of catch.
+
+kg_data = kg_data %>% filter(species != "Jelly_Fish") %>% 
+      filter(species != "box_only") %>%  filter(species != "Night_drag") %>% 
+    filter(species != "Tuna") %>% filter(species != "Tuna") %>%
+    filter(species != "Botz") %>% filter(species != "yasmin")  %>%
+    filter(species != "Soltan_mesudar")%>% filter(species != "san_fedro")%>% 
+    filter(species != "raskas") %>% filter(species != "Raskasim")  %>%
+    filter(species != "labat")%>%  filter(species != "Hazaim")%>%
+    filter(species != "gagim") %>% filter(species != "Krisal") %>%
+    filter(species != "Cristal")%>% filter(species != "Gambari_adom")%>%
+    filter(species != "Vest")%>% filter(species != "vest")%>% filter(species != "Adom")
+
+#update the species vector
+  species_vector = unique(kg_data$species)
+species_vector= sort(species_vector)
+
+x =kg_data %>%  mutate(species = replace(kg_data$species, "Musar","mmm"))
 
 
 
-#erase from the data empty columns.
-#The Jelly fish had just 5 records, so I chose to arease it [I think most of the time they not reported]
-wide_data=wide_data %>% dplyr::select(everything(),-Jelly_Fish, -Vest)
-
-#cerate name vector
-names_vector =   colnames(dplyr :: select(wide_data,Adom:Varod))
-  
-  #If there are "kg" at the start of any name - remove the Kg form the names
-  for (i in 1:length(names_vector)) {
-  names_vector[i] = gsub("kg.", "", names_vector[i] )  
-  }
    
-   
- #uploud an uplate of the scintific name - data with common names, origin, code, and scientific names - I joined to Itay names sum new species with new code
-code_sceintific_names= read.csv(file="data/species_scientific_name_new_data.csv",stringsAsFactors=FALSE)
+ #uploud an update of the scintific name - data with common names, origin, code, and scientific names - I put inside also duplicates code with to differences common names.
+code_sceintific_names= read.csv(file="pross size 1976_2013/species to scientific code_for raw 1976_2013 data.csv", stringsAsFactors = F)
 
-#order the names in the vector from the data=names vector, and in the sceintific names data
-  code_sceintific_names=code_sceintific_names[order(code_sceintific_names$Common_name),]
-  names_vector=names_vector[order(names_vector)]
+#prapere the data and drop NA rows
+kg_data$species = as.character(kg_data$species)
+kg_data = kg_data %>% filter(!is.na(species))
 
-  #join the vectors to ensute they equal
-code_sceintific_names=cbind(code_sceintific_names,names_vector)
+#double loop for replace the common names in Species code names.
+for (i in 1:length(kg_data$species))
+{
+  for (j in 1:length(code_sceintific_names$Common_name))
+  {
+    if (kg_data$species[i]==code_sceintific_names$Common_name[j])
+{
+  kg_data$species[i]=code_sceintific_names$Sp_code[j]
+}#end if
 
-#replace the "kg" in the colnames of the species - agian, no need if there is no kg in the name
+  }#end j for
   
-     wide_data = wide_data %>% rename_at(vars(starts_with("kg.")), funs(str_replace(., "kg.", "")))
+}#end i for
 
-     
-  #sum different common name reffer to the same species:
-  wide_data = wide_data %>% mutate(Hazaim_1 = Hazaim+Hazir, Lokus_1 = Lokus+Lokus_manot, Adom_1 = Adom+Soltan, Cristal_1 = Cristal+Gambari, Denis_1 = Denis+Tziporot, Hulim_1 = Hulim+Makarunim, Soltan_Fake_1 = Soltan_Fake+Soltan_Hul) %>% 
-    dplyr:: select(everything(), -Hazaim, -Hazir,-Lokus, -Lokus_manot, -Adom, -Soltan, -Cristal, -Gambari, -Denis, -Tziporot, -Hulim, -Makarunim,  -Soltan_Fake, -Soltan_Hul) %>% 
-    dplyr:: rename( Hazaim = Hazaim_1, Lokus = Lokus_1, Adom =Adom_1,Cristal =  Cristal_1, Denis = Denis_1, Hulim = Hulim_1, Soltan_Fake = Soltan_Fake_1)
 
+  write.csv(kg_data, "pross size 1976_2013/kg_data_code.CSV")
   
-  #------!!!!-----need to check if the short code is working [with the !(%in%)], if work, to erase the long below---!!!------
-  
-  #erase raws with common names with identical code, respectively to the wide_data below
-  common_code_unique = code_sceintific_names[!(code_sceintific_names$Common_name %in% c("Hazir","Lokus_manot","Soltan", "Gambari", "Tziporot", "Makarunim", "Soltan_Hul")),]
-  
-  common_code_unique = code_sceintific_names[code_sceintific_names$Common_name != "Hazir"  &  code_sceintific_names$Common_name != "Lokus_manot"  &  code_sceintific_names$Common_name != "Soltan"  &  code_sceintific_names$Common_name != "Gambari"  &  code_sceintific_names$Common_name != "Tziporot"  &  code_sceintific_names$Common_name != "Makarunim"  &  code_sceintific_names$Common_name != "Soltan_Hul" ,] 
-  
-  #create vectors with the unique common names and code
-  common_names = common_code_unique$Common_name
-  code_vector_unique = common_code_unique$Sp_code
-  
-  #replace the name of the catch to the code instead of common names
- wide_data = wide_data %>%  rename_at(vars(common_names), ~ code_vector_unique)
-  
-  
-  write.csv(wide_data, "pross size 1976_2013/wide_new_data.CSV")
-  wide_data = read.csv("pross size 1976_2013/wide_new_data.CSV")
 
 ```
 
@@ -714,6 +720,7 @@ Define collomnse with TRUE or FALSE, for any net, to quick check if there are de
 
 ```{r}
 
+kg_data = read.csv("pross size 1976_2013/kg_data_code.CSV")
 med_rast1=raster("map_med.txt")
 
 med_rast1[med_rast1<(-300)]<-NA
@@ -726,10 +733,12 @@ med_rast1= projectRaster(med_rast1, crs = "+proj=longlat")
 location_data <- read.csv("data/locations_lat_on_shore.csv")
 colnames(location_data)=c("Site","Lat_shore","Lon_shore","Perpendicular")
 
-#merge the data and order the columns
-loc_data=merge(wide_data,location_data)
+#until here - need to debug the Site columns for the continue
 
-loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,Eer:Upo)
+#merge the data and order the columns
+loc_data=merge(kg_data,location_data)
+
+loc_data = dplyr::select(loc_data, Net:Net_index, Start_Time_hh:Draging_time, Site, Direction, Lat_shore:Perpendicular,species)
 
 
 
